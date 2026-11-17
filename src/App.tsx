@@ -1,0 +1,100 @@
+import { useEffect, useRef } from 'react';
+import { EMOTIONS, EMOTION_ORDER } from './game/content/emotions';
+import { Game, getGame, setGame } from './game/Game';
+import type { OpeningScene } from './game/scenes/OpeningScene';
+import { useGame } from './state/store';
+import { ConsolePanel } from './ui/ConsolePanel';
+import { DialogueBox } from './ui/DialogueBox';
+import { Hud } from './ui/Hud';
+import { MapOverlay } from './ui/MapOverlay';
+import { MoodDial, canSwitch } from './ui/MoodDial';
+import { HelpSheet, InspectCard, PauseMenu } from './ui/Sheets';
+import { Captions, TitleScreen } from './ui/Title';
+
+function useGlobalKeys() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const s = useGame.getState();
+      if (s.phase === 'opening') {
+        if (e.code === 'Escape') (getGame()?.scenes.opening as OpeningScene | undefined)?.skip();
+        return;
+      }
+      if (s.phase !== 'playing') return;
+      if (e.code === 'Escape') {
+        if (s.inspect) s.setInspect(null);
+        else if (s.mapOpen) s.setMap(false);
+        else if (s.helpOpen) s.setHelp(false);
+        else s.setMenu(!s.menuOpen);
+        return;
+      }
+      const overlay = s.menuOpen || s.helpOpen || s.inspect || s.mapOpen;
+      if (overlay) {
+        if (e.code === 'KeyM' && s.mapOpen) s.setMap(false);
+        if (e.code === 'KeyH' && s.helpOpen) s.setHelp(false);
+        return;
+      }
+      const num = /^(?:Digit|Numpad)([1-5])$/.exec(e.code);
+      if (num && canSwitch(s)) {
+        s.setActive(EMOTION_ORDER[Number(num[1]) - 1]);
+        return;
+      }
+      if (e.code === 'KeyM' && s.consoleStage === 'off' && !s.dialogue && !s.transitioning) s.setMap(true);
+      if (e.code === 'KeyH' && !s.dialogue) s.setHelp(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+}
+
+export default function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const phase = useGame((s) => s.phase);
+  const active = useGame((s) => s.active);
+  const reduced = useGame((s) => s.reducedMotion);
+  useGlobalKeys();
+
+  useEffect(() => {
+    const g = new Game(canvasRef.current!);
+    setGame(g);
+    g.start();
+    // expose for debugging and automated tests
+    (window as unknown as { __game: Game; __store: typeof useGame }).__game = g;
+    (window as unknown as { __store: typeof useGame }).__store = useGame;
+    return () => {
+      g.dispose();
+      setGame(null);
+    };
+  }, []);
+
+  useEffect(() => {
+    const E = EMOTIONS[active];
+    document.documentElement.style.setProperty('--accent', E.color);
+  }, [active]);
+
+  useEffect(() => {
+    document.documentElement.dataset.reduced = String(reduced);
+  }, [reduced]);
+
+  return (
+    <>
+      <canvas ref={canvasRef} className="stage" aria-label="Riley's mind. Use the controls below, or press H for keyboard controls." role="img" />
+      <div className="overlay">
+        {phase === 'title' && <TitleScreen />}
+        {phase === 'opening' && <Captions />}
+        {phase === 'playing' && (
+          <>
+            <Hud />
+            <ConsolePanel />
+            <DialogueBox />
+            <MoodDial />
+            <MapOverlay />
+            <InspectCard />
+            <HelpSheet />
+            <PauseMenu />
+          </>
+        )}
+      </div>
+    </>
+  );
+}
