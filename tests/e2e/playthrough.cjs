@@ -420,9 +420,13 @@ const check = (name, ok, detail = '') => {
   s = await st();
   const imag = s.progress.insights.filter((i) => i.startsWith('imag'));
   check('every emotion finds its own secret in Imagination Land', imag.length === 5, imag.join(','));
-  await interactAt(1320);
+  await walkTo(1320);
+  // the land also rearranges itself on a timer, so compare before and after turning the tower
+  const whimBefore = await S(() => window.__game.current.whim);
+  await page.keyboard.press('KeyE');
   await wait(400);
-  check('the Kaleidoscope Tower rearranges the land', (await S(() => window.__game.current.whim)) !== 'daydream');
+  const whimAfter = await S(() => window.__game.current.whim);
+  check('the Kaleidoscope Tower rearranges the land', whimAfter !== whimBefore, `${whimBefore} -> ${whimAfter}`);
   await shot('p3-whim');
 
   // ───────── Dream Productions: every station reacts to its emotion ─────────
