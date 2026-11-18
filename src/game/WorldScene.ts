@@ -103,6 +103,8 @@ export interface Interactable {
   abilityRange?: number;
   /** Higher wins when several things react to the same ability. Objects beat crowd reactions. */
   priority?: number;
+  /** Within this distance the object wins the E prompt over anything else nearby (e.g. a console over a passer-by). */
+  focusRange?: number;
 }
 
 type EffectKind = 'burst' | 'ripple' | 'scan' | 'swipe' | 'shock';
@@ -311,12 +313,16 @@ export abstract class WorldScene extends Scene {
     // nearest interactable
     let near: Interactable | null = null;
     let nd = Infinity;
+    let focused = false;
     for (const it of this.interactables) {
       if (!it.label()) continue;
       const d = Math.abs(it.x - p.x);
-      if (d <= it.range && d < nd) {
+      if (d > it.range) continue;
+      const f = it.focusRange !== undefined && d <= it.focusRange;
+      if ((f && !focused) || (f === focused && d < nd)) {
         near = it;
         nd = d;
+        focused = f;
       }
     }
     this.nearest = blocked ? null : near;

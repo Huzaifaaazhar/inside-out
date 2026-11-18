@@ -209,6 +209,7 @@ export class HQScene extends WorldScene {
       x: CONSOLE_X - 60,
       y: 470,
       range: 200,
+      focusRange: 140,
       hit: { x: CONSOLE_X - 360, y: 520, w: 720, h: 250 },
       label: () => this.consoleLabel(),
       interact: () => {
