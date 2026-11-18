@@ -6,12 +6,13 @@ import { useGame } from './state/store';
 import { ConsolePanel } from './ui/ConsolePanel';
 import { DialogueBox } from './ui/DialogueBox';
 import { Hud } from './ui/Hud';
-import { MapOverlay } from './ui/MapOverlay';
+import { MindAtlas } from './ui/MindAtlas';
 import { MoodDial, canSwitch } from './ui/MoodDial';
 import { HelpSheet, InspectCard, PauseMenu } from './ui/Sheets';
 import { Captions, TitleScreen } from './ui/Title';
 import { MemoryTheatre } from './ui/MemoryTheatre';
 import { ActivityPanel, Journal, MindReport, NightReport } from './ui/MindSheets';
+import { EndingScreen } from './ui/FinaleUI';
 
 function useGlobalKeys() {
   useEffect(() => {
@@ -25,6 +26,7 @@ function useGlobalKeys() {
       if (s.phase !== 'playing') return;
       if (e.code === 'Escape') {
         if (s.nightReport) return;
+        if (s.endingOpen) return s.setEndingOpen(false);
         if (s.theatre) s.setTheatre(null);
         else if (s.journalOpen) s.setJournal(false);
         else if (s.reportOpen) s.setReport(false);
@@ -34,7 +36,7 @@ function useGlobalKeys() {
         else s.setMenu(!s.menuOpen);
         return;
       }
-      const overlay = s.menuOpen || s.helpOpen || s.inspect || s.mapOpen || s.theatre || s.journalOpen || s.reportOpen || s.nightReport;
+      const overlay = s.menuOpen || s.helpOpen || s.inspect || s.mapOpen || s.theatre || s.journalOpen || s.reportOpen || s.nightReport || s.endingOpen || s.consoleStage === 'reflect';
       if (overlay) {
         if (e.code === 'KeyJ' && s.journalOpen && !s.theatre) s.setJournal(false);
         if (e.code === 'KeyR' && s.reportOpen) s.setReport(false);
@@ -101,11 +103,12 @@ export default function App() {
             <DialogueBox />
             <MoodDial />
             <ActivityPanel />
-            <MapOverlay />
+            <MindAtlas />
             <Journal />
             <MindReport />
             <MemoryTheatre />
             <NightReport />
+            <EndingScreen />
             <InspectCard />
             <HelpSheet />
             <PauseMenu />

@@ -1,6 +1,6 @@
 import type { EmotionId } from './emotions';
 
-export type AreaId = 'hq' | 'memory' | 'fading' | 'islands' | 'isle-family' | 'isle-friendship' | 'isle-hockey' | 'isle-goofball';
+export type AreaId = 'hq' | 'memory' | 'fading' | 'islands' | 'isle-family' | 'isle-friendship' | 'isle-hockey' | 'isle-goofball' | 'imagination' | 'dreams' | 'subconscious';
 
 export interface AreaDef {
   id: AreaId;
@@ -17,14 +17,10 @@ export const AREAS: Record<AreaId, AreaDef> = {
   'isle-friendship': { id: 'isle-friendship', name: 'Friendship Island', blurb: 'A boardwalk built one friend at a time.' },
   'isle-hockey': { id: 'isle-hockey', name: 'Hockey Island', blurb: 'Floodlights, cold air and the sound of a puck on ice.' },
   'isle-goofball': { id: 'isle-goofball', name: 'Goofball Island', blurb: 'Where Riley is allowed to be completely ridiculous.' },
+  imagination: { id: 'imagination', name: 'Imagination Land', blurb: 'Everything Riley has ever made up, still making itself up.' },
+  dreams: { id: 'dreams', name: 'Dream Productions', blurb: 'Where the day gets turned into tonight’s dream.' },
+  subconscious: { id: 'subconscious', name: 'The Subconscious', blurb: 'Deep down, where Riley keeps the things she isn’t ready to look at.' },
 };
-
-/** Areas shown on the mind map that later parts will open. */
-export const FUTURE_AREAS = [
-  { id: 'daydream', name: 'Daydream Valley', blurb: 'Fog too thick to cross. For now.' },
-  { id: 'undercurrent', name: 'The Undercurrent', blurb: 'Something hums down there.' },
-  { id: 'station', name: 'Thought Station', blurb: 'The tracks are still being laid.' },
-];
 
 export type IslandId = 'family' | 'friendship' | 'hockey' | 'goofball' | 'honesty' | 'curiosity';
 

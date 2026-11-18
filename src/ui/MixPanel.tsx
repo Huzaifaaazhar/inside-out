@@ -34,10 +34,13 @@ export function MixPanel() {
   const active = useGame((s) => s.active);
   const addPip = useGame((s) => s.addPip);
   const run = useGame((s) => s.scenario);
+  const info = useGame((s) => s.mixInfo);
   const total = mixTotal(mix);
-  const left = PIP_BUDGET - total;
+  const budget = info?.budget ?? PIP_BUDGET;
+  const left = budget - total;
   const sc = SCENARIOS.find((x) => x.id === run?.id);
   const moment = sc?.moments[run?.moment ?? 0];
+  const view = info ?? (sc && moment ? { title: moment.title, prompt: moment.prompt, index: run!.moment, count: sc.moments.length, leads: sc.moments.map((_, i) => run!.results[i]?.lead ?? null), budget, note: undefined } : null);
   const lead = leadOf(mix, active);
   const send = () => (getGame()?.scenes.hq as HQScene | undefined)?.commitMix();
 
@@ -60,19 +63,20 @@ export function MixPanel() {
     return () => window.removeEventListener('keydown', onKey);
   }, [addPip]);
 
-  if (!sc || !moment) return null;
+  if (!view) return null;
   return (
     <section className="cpanel cpanel--dock mix" aria-label="Mix Riley's feelings" style={{ ['--accent' as string]: total ? EMOTIONS[lead].color : 'var(--brass)' }}>
       <div className="cpanel__top">
-        <h3>{moment.title}</h3>
-        <div className="beats" aria-label={`Moment ${run!.moment + 1} of ${sc.moments.length}`}>
-          {sc.moments.map((m, i) => (
-            <span key={m.id} data-done={i < run!.moment ? '' : undefined} data-now={i === run!.moment ? '' : undefined} style={i < run!.moment ? { ['--c' as string]: EMOTIONS[run!.results[i].lead].color } : undefined} />
+        <h3>{view.title}</h3>
+        <div className="beats" aria-label={`Step ${view.index + 1} of ${view.count}`}>
+          {view.leads.map((l, i) => (
+            <span key={i} data-done={i < view.index ? '' : undefined} data-now={i === view.index ? '' : undefined} style={i < view.index && l ? { ['--c' as string]: EMOTIONS[l].color } : undefined} />
           ))}
         </div>
       </div>
-      <p>{moment.prompt}</p>
-      <div className="mix__levers" role="group" aria-label={`Influence: ${left} of ${PIP_BUDGET} left`}>
+      <p>{view.prompt}</p>
+      {view.note && <p className="mix__note">{view.note}</p>}
+      <div className="mix__levers" role="group" aria-label={`Influence: ${left} of ${budget} left`}>
         {EMOTION_ORDER.map((id, i) => {
           const E = EMOTIONS[id];
           const v = mix[id];
@@ -110,7 +114,7 @@ export function MixPanel() {
           Send to Riley <Key>Enter</Key>
         </button>
         <span className="mix__budget">
-          {left} of {PIP_BUDGET} influence left. {total ? `${EMOTIONS[lead].name} leads and plays their ability.` : ''}
+          {left} of {budget} influence left. {total ? `${EMOTIONS[lead].name} leads and plays their ability.` : ''}
         </span>
       </div>
     </section>

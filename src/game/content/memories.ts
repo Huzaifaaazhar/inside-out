@@ -3,7 +3,7 @@ import type { EmotionId } from './emotions';
 import type { IslandId, MemoryDef } from './world';
 
 export type Significance = 'core' | 'important' | 'everyday';
-export type MemStart = 'core' | 'long-term' | 'faded' | 'forgotten';
+export type MemStart = 'core' | 'long-term' | 'faded' | 'forgotten' | 'sealed';
 
 export interface MemoryEntry extends MemoryDef {
   island?: IslandId;
@@ -705,6 +705,39 @@ export const MEMORY_LIBRARY: MemoryEntry[] = [
       disgust: 'Bubblegum-flavoured toothpaste. A crime.',
     },
     detail: { label: 'The sticker', text: 'A green triceratops. It’s on her old bed frame.', x: 0.5, y: 0.5 },
+  }),
+  // ───────────── sealed away in the Subconscious ─────────────
+  m({
+    id: 'sealed-house',
+    title: 'The empty old house',
+    emotion: 'sadness',
+    text: 'The last walk through the old house, after the furniture had gone.',
+    hidden: 'She was scared that liking it here would mean leaving home behind.',
+    island: 'family',
+    significance: 'important',
+    start: 'sealed',
+    when: 'Moving day',
+    script: {
+      kit: 'livingroom',
+      dur: 10,
+      actors: [
+        { who: 'riley', keys: [[0, 0.2, 'walk', 1, 'sad'], [4, 0.55, 'stand', 1, 'sad'], [7, 0.55, 'sit', 1, 'sad']] },
+        { who: 'dad', keys: [[0, 0.95, 'stand', -1, 'calm'], [7, 0.85, 'stand', -1, 'sad']] },
+      ],
+      captions: [
+        { t: 0, text: 'No sofa. No lamp. Just marks on the wall where the pictures were.' },
+        { t: 4, text: 'Her height, in pencil, every birthday since she was three.' },
+        { t: 7, text: '“Take your time, kiddo.”' },
+      ],
+    },
+    lens: {
+      joy: 'Eight years of birthdays on one wall. That’s a lot of growing.',
+      sadness: 'She didn’t cry that day. She saved it all up instead.',
+      anger: 'Someone else is going to paint over those pencil marks.',
+      fear: 'She was scared that if she liked the new place, this one would stop counting.',
+      disgust: 'The new owners have terrible taste in curtains. She checked.',
+    },
+    detail: { label: 'The pencil marks', text: 'The last one says “Riley, 11, last one here”.', x: 0.62, y: 0.4 },
   }),
 ];
 

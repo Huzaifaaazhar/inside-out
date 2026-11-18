@@ -4,7 +4,6 @@ import { glow, memoryOrb, rgba, roundRect, signText } from '../../../engine/draw
 import { clamp, hash } from '../../../engine/math';
 import { useGame } from '../../../state/store';
 import type { Activity } from '../../activities';
-import { BraceletWeave } from '../../activities';
 import type { Rect } from '../../art/screen';
 import { EMOTIONS } from '../../content/emotions';
 import type { IslandId } from '../../content/world';
@@ -14,22 +13,20 @@ import type { SceneId } from '../../Scene';
 import type { Deltas } from '../../systems/mind';
 import { BAND_LABEL, islandTarget, stabilityBand } from '../../systems/mind';
 import { allEntries } from '../../systems/library';
-import { Actor, WorldScene } from '../../WorldScene';
+import { Actor } from '../../WorldScene';
+import { ActivityScene } from '../../ActivityScene';
 
 /** Last stability the player saw on each island, to notice drops between visits. */
 const lastSeen: Partial<Record<IslandId, number>> = {};
 
 export const HUB_SPAWN: Record<IslandId, number> = { family: 640, friendship: 1120, hockey: 1600, goofball: 3060, honesty: 2000, curiosity: 2440 };
 
-export abstract class IslandScene extends WorldScene {
+export abstract class IslandScene extends ActivityScene {
   abstract readonly id: SceneId;
   abstract readonly island: IslandId;
   worldW = 2800;
   floorY = 760;
-  protected activity: Activity | null = null;
-  private activityId = '';
   private activityReward: { deltas: Deltas; text: string } | null = null;
-  private lastProgress = -1;
   protected heartX = 580;
 
   constructor(game: Game) {
@@ -130,10 +127,6 @@ export abstract class IslandScene extends WorldScene {
     }
   }
 
-  exit() {
-    super.exit();
-    if (this.activity) this.endActivity(false);
-  }
 
   protected abstract firstVisitLine(): string;
 
@@ -144,34 +137,19 @@ export abstract class IslandScene extends WorldScene {
       st.say([{ speaker: st.active, text: closedLine }, { speaker: 'console', text: `${this.def.name} is crumbling. What happens in Riley’s days is what rebuilds it.` }]);
       return;
     }
-    const a = make();
-    a.rect = rect;
-    this.player.bark = null;
-    this.activity = a;
-    this.activityId = id;
     this.activityReward = reward;
-    this.locked = true;
-    this.lastProgress = -1;
-    st.setActivity(id);
-    st.setMinigame({ emotion: st.active, title: a.title, instruction: a.instruction, primary: a.primaryLabel, mode: a.mode, progress: 0 });
-    this.game.audio.chime(2);
+    this.hostActivity(id, make(), rect);
   }
 
-  /** Leave an activity early (from the UI) or when it ends. */
-  endActivity(completed: boolean) {
+  protected onActivityDone(a: Activity, id: string, completed: boolean) {
     const st = useGame.getState();
-    const a = this.activity;
-    this.activity = null;
-    this.locked = false;
-    st.setActivity(null);
-    st.setMinigame(null);
-    if (!completed || !a || !this.activityReward) return;
+    if (!completed || !this.activityReward) return;
     const scale = a.score >= 0.5 ? 1 : 0.5;
     const d: Deltas = {
       stats: Object.fromEntries(Object.entries(this.activityReward.deltas.stats ?? {}).map(([k, v]) => [k, Math.round((v ?? 0) * scale)])),
       islands: Object.fromEntries(Object.entries(this.activityReward.deltas.islands ?? {}).map(([k, v]) => [k, Math.round((v ?? 0) * scale)])),
     };
-    const paid = st.rewardActivity(this.activityId, d, this.activityReward.text);
+    const paid = st.rewardActivity(id, d, this.activityReward.text);
     if (paid) st.showToast(`${this.activityReward.text} ${this.def.name} feels steadier.`, this.def.color);
     else st.showToast('Just for fun this time. Activities steady an island once a day.', this.def.color);
     this.player.setPose('cheer', 1.2);
@@ -185,43 +163,7 @@ export abstract class IslandScene extends WorldScene {
       this.particles.emit({ x, y: -20, count: 1, color: ['#5a4a6a', '#3a2f50'], shape: 'dot', speed: [40, 80], angle: [Math.PI * 0.45, Math.PI * 0.55], gravity: 500, life: [2, 3], size: [3, 7], additive: false });
       if (Math.random() < 0.08) this.camera.shake(3);
     }
-    if (this.activity) {
-      const a = this.activity;
-      const r = a.rect;
-      const input = this.game.input;
-      // frame the activity in the space above the docked panel
-      const z = Math.min((view.w * 0.92) / r.w, (view.h * 0.64) / r.h);
-      this.camera.targetZoom = z;
-      this.camera.targetX = r.x + r.w / 2;
-      this.camera.targetY = r.y + (STAGE_H / 2 - (STAGE_H - view.h) / 2 - 24) / z;
-      const w = this.camera.screenToWorld(input.pointer.x, input.pointer.y);
-      const u = (w.x - r.x) / r.w;
-      const v = (w.y - r.y) / r.h;
-      const blocked = !!st.dialogue || st.menuOpen;
-      if (a instanceof BraceletWeave && !blocked) {
-        const map = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
-        const hitKey = map.findIndex((k) => input.pressed(k) || input.pressed(['KeyW', 'KeyD', 'KeyS', 'KeyA'][map.indexOf(k)]));
-        if (hitKey >= 0) a.arrow = hitKey;
-      }
-      a.step(blocked ? 0 : dt, {
-        u,
-        v,
-        inside: u >= 0 && u <= 1 && v >= 0 && v <= 1,
-        moved: input.pointer.moved,
-        pressed: !blocked && input.pointer.pressed,
-        down: !blocked && input.pointer.down,
-        primaryPressed: !blocked && input.primaryPressed(),
-        primaryDown: !blocked && input.primaryDown(),
-        axisX: blocked ? 0 : input.axisX,
-        axisY: blocked ? 0 : input.axisY,
-      });
-      if (Math.abs(a.progress - this.lastProgress) > 0.02) {
-        this.lastProgress = a.progress;
-        const ui = st.minigame;
-        if (ui) st.setMinigame({ ...ui, progress: a.progress });
-      }
-      if (a.done) this.endActivity(true);
-    }
+    this.tickActivity(dt);
     this.islandTick(dt);
   }
 
@@ -243,11 +185,7 @@ export abstract class IslandScene extends WorldScene {
     this.drawCracks(ctx);
     this.drawActors(ctx);
     this.drawEffects(ctx);
-    if (this.activity) {
-      ctx.fillStyle = 'rgba(10,6,30,0.35)';
-      ctx.fillRect(this.camera.x - STAGE_W, 0, STAGE_W * 2, STAGE_H);
-      this.activity.render(ctx);
-    }
+    this.renderActivity(ctx);
     this.particles.render(ctx);
     ctx.restore();
     ctx.save();

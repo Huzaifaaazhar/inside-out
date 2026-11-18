@@ -11,7 +11,8 @@ import { BAND_LABEL, stabilityBand } from '../systems/mind';
 import type { Game } from '../Game';
 import { Actor, WorldScene } from '../WorldScene';
 
-const W = 3400;
+const W = 3700;
+const IMAG_X = 3500;
 const FLOOR = 780;
 const PARALLAX = 0.55;
 const VIEW: Record<IslandId, number> = { family: 560, friendship: 1020, hockey: 1480, honesty: 1900, curiosity: 2380, goofball: 3000 };
@@ -96,6 +97,19 @@ export class IslandsScene extends WorldScene {
 
   private build() {
     const store = () => useGame.getState();
+    this.interactables.push({
+      id: 'ribbon',
+      x: IMAG_X,
+      y: FLOOR - 200,
+      range: 140,
+      hit: { x: IMAG_X - 110, y: FLOOR - 420, w: 220, h: 420 },
+      label: () => (store().mind ? 'Ride the daydream ribbon to Imagination Land' : 'Look at the tangled daydream ribbon'),
+      interact: () => {
+        if (!store().mind) return this.player.say('A ribbon of daydreams, all knotted up. Riley needs a few more days in her new life before it untangles.', 4);
+        store().travel('imagination', 'glide', 300);
+      },
+      abilities: { fear: () => this.player.say('A ribbon. Into the sky. With no seatbelts. Great.', 3), joy: () => this.player.say('Wheee-ready!', 2) },
+    });
     this.interactables.push({
       id: 'door',
       x: DOOR_X,
@@ -343,6 +357,7 @@ export class IslandsScene extends WorldScene {
     this.drawDoor(ctx, DOOR_X, t);
     this.drawBoulder(ctx, t);
     this.drawGossip(ctx, t);
+    this.drawRibbon(ctx, IMAG_X, t, !!st.mind);
     for (const def of ISLANDS) {
       const stab = st.mind?.islands[def.id];
       this.drawViewpoint(ctx, VIEW[def.id], def.color, stab !== undefined ? stab >= 45 : st.islands[def.id], t);
@@ -440,6 +455,26 @@ export class IslandsScene extends WorldScene {
   }
 
   /** A little arch where a light-bridge leaves the cliff for a walkable island. */
+  /** A candy-striped ribbon curling up into the sky: the way to Imagination Land. */
+  private drawRibbon(ctx: Ctx, x: number, t: number, open: boolean) {
+    const cols = ['#FF7FB0', '#FFE45E', '#7AE7C7', '#8E5BD9'];
+    if (open) glow(ctx, x, FLOOR - 200, 200, '#FF7FB0', 0.35 + Math.sin(t * 2) * 0.08);
+    for (let k = 0; k < 4; k++) {
+      ctx.strokeStyle = open ? cols[k] : '#6b5aa8';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let i = 0; i <= 40; i++) {
+        const y = FLOOR - i * 18;
+        const xx = x + Math.sin(i * 0.35 + t * (open ? 1.6 : 0.3) + k * 1.57) * (30 + i * 1.5) + (open ? 0 : Math.sin(i * 1.3) * 10);
+        if (i === 0) ctx.moveTo(xx, y);
+        else ctx.lineTo(xx, y);
+      }
+      ctx.stroke();
+    }
+    signText(ctx, open ? 'Imagination Land' : 'Tangled ribbon', x, FLOOR - 30, 16, open ? '#FFE45E' : '#a99be0');
+  }
+
   private drawGate(ctx: Ctx, x: number, color: string, name: string, t: number) {
     glow(ctx, x, FLOOR - 90, 110, color, 0.45 + Math.sin(t * 2 + x) * 0.1);
     ctx.strokeStyle = color;

@@ -11,6 +11,7 @@ import type { Interactable } from '../WorldScene';
 import { Actor, WorldScene } from '../WorldScene';
 
 const FLOOR = 770;
+const DOWN_X = 2960;
 
 interface Drifter {
   entry: MemoryEntry;
@@ -24,7 +25,7 @@ interface Drifter {
  */
 export class FadingScene extends WorldScene {
   readonly id = 'fading' as const;
-  worldW = 2800;
+  worldW = 3150;
   floorY = FLOOR;
   private drifters: Drifter[] = [];
   private sig = '';
@@ -44,6 +45,19 @@ export class FadingScene extends WorldScene {
       hit: { x: 60, y: 300, w: 220, h: FLOOR - 300 },
       label: () => 'Climb back up to Long-Term Memory',
       interact: () => store().travel('memory', 'glide', 99999),
+    });
+    this.interactables.push({
+      id: 'down',
+      x: DOWN_X,
+      y: FLOOR - 120,
+      range: 140,
+      hit: { x: DOWN_X - 130, y: FLOOR - 260, w: 260, h: 280 },
+      label: () => (store().mind ? 'Take the dark stairs down into the Subconscious' : 'Peer down the dark stairwell'),
+      interact: () => {
+        if (!store().mind) return this.player.say('Stairs going down into the dark. Not yet. Riley isn’t ready to look down there.', 3.6);
+        store().travel('subconscious', 'fade', 300);
+      },
+      abilities: { fear: () => this.player.say('Down? Into the DARK? Where she keeps the stuff she’s scared of? Sure. Cool.', 3.4) },
     });
     this.interactables.push({
       id: 'wisp',
@@ -229,6 +243,27 @@ export class FadingScene extends WorldScene {
       }
     }
     if (!this.drifters.length) signText(ctx, 'Nothing drifting today', 1400, FLOOR - 320, 24, '#F3EEFF');
+    // a stairwell spiralling down into the Subconscious
+    ctx.fillStyle = '#2a2547';
+    ctx.beginPath();
+    ctx.ellipse(DOWN_X, FLOOR + 4, 130, 30, 0, 0, TAU);
+    ctx.fill();
+    for (let k = 0; k < 6; k++) {
+      ctx.fillStyle = k % 2 ? '#8f88a0' : '#a59fb4';
+      const a = t * 0.2 + k * 0.9;
+      ctx.beginPath();
+      ctx.ellipse(DOWN_X + Math.cos(a) * 70, FLOOR + 4 + Math.sin(a) * 12, 34 - k * 3, 8, 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.strokeStyle = '#7d7690';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(DOWN_X - 140, FLOOR);
+    ctx.lineTo(DOWN_X - 140, FLOOR - 150);
+    ctx.moveTo(DOWN_X + 140, FLOOR);
+    ctx.lineTo(DOWN_X + 140, FLOOR - 150);
+    ctx.stroke();
+    signText(ctx, 'Down to the Subconscious', DOWN_X, FLOOR - 190, 18, '#F3EEFF');
     this.drawActors(ctx);
     this.drawEffects(ctx);
     this.particles.render(ctx);

@@ -1,4 +1,6 @@
 import type { EmotionId } from '../game/content/emotions';
+import type { TrackId } from './music';
+import { Music } from './music';
 
 /**
  * All sound is synthesized with WebAudio, so there are no audio files to license.
@@ -56,7 +58,7 @@ export class AudioEngine {
     comp.ratio.value = 4;
     this.master.connect(comp).connect(ctx.destination);
     this.sfx = ctx.createGain();
-    this.sfx.gain.value = 0.9;
+    this.sfx.gain.value = this.sfxVol;
     this.sfx.connect(this.master);
     this.musicBus = ctx.createGain();
     this.musicBus.gain.value = 0.0;
@@ -77,6 +79,32 @@ export class AudioEngine {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
 
     this.startPad();
+    this.songBus = ctx.createGain();
+    this.songBus.gain.value = this.musicVol;
+    this.songBus.connect(this.master);
+    this.music = new Music(ctx, this.songBus);
+    if (this.wantTrack) this.music.play(this.wantTrack);
+  }
+
+  private music: Music | null = null;
+  private songBus!: GainNode;
+  private musicVol = 0.7;
+  private sfxVol = 0.9;
+  private wantTrack: TrackId | null = null;
+
+  /** Background music for an area. Safe to call before audio is unlocked. */
+  playTrack(id: TrackId) {
+    this.wantTrack = id;
+    this.music?.play(id);
+  }
+
+  setVolumes(music: number, sfx: number) {
+    this.musicVol = music;
+    this.sfxVol = sfx;
+    if (!this.ctx) return;
+    this.songBus.gain.setTargetAtTime(music, this.ctx.currentTime, 0.1);
+    this.sfx.gain.setTargetAtTime(sfx, this.ctx.currentTime, 0.1);
+    this.musicBus.gain.setTargetAtTime(music * 0.8, this.ctx.currentTime, 0.3);
   }
 
   setMuted(m: boolean) {

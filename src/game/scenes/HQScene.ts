@@ -39,6 +39,10 @@ import { SCENARIO_BY_DAY } from '../scenario/scenarios';
 import type { Mix } from '../systems/mind';
 import { mixDistinct, mixTotal, resolveMoment } from '../systems/mind';
 import { ISLANDS } from '../content/world';
+import { deliveryBonus, levelOf } from '../systems/progress';
+import { ENDINGS, FINALE_INTRO, FINALE_MEETING, FINALE_MEETING_BUDGET, FINALE_NEWS, FINALE_TALK, PURPOSE_LINE } from '../scenario/finale';
+import { getEntry } from '../systems/library';
+import { PIP_BUDGET } from '../systems/mind';
 import { Actor, WorldScene } from '../WorldScene';
 
 const HOMES: Record<EmotionId, number> = { joy: 1560, sadness: 860, anger: 1990, fear: 2330, disgust: 2640 };
@@ -87,6 +91,8 @@ export class HQScene extends WorldScene {
   private p2moment: MomentDef | null = null;
   private p2mix: Mix | null = null;
   private p2scenario: ScenarioDef | null = null;
+  /** The Day 7 turning point: which phase it's on (news → reflect → talk → meeting → ending). */
+  private fin: { phase: number } | null = null;
 
   constructor(game: Game) {
     super(game);
@@ -446,7 +452,8 @@ export class HQScene extends WorldScene {
     if (s.carrying) return 'Look through Riley’s eyes';
     if (!s.mind) return 'Let Riley sleep (end her first day)';
     if (s.objective === 'p2-day') return `Start today: “${SCENARIO_BY_DAY[s.mind.day]?.title ?? 'a new day'}”`;
-    if (s.objective === 'p2-done') return 'Look through Riley’s eyes';
+    if (s.objective === 'p3-final') return 'Day 7: face the turning point';
+    if (s.objective === 'complete') return 'Look back on how Riley’s story ended';
     return 'Let Riley sleep';
   }
 
@@ -457,11 +464,23 @@ export class HQScene extends WorldScene {
       this.player.say('Core memory first! The holder’s on the left.', 2.8);
       return true;
     }
-    if (s.objective === 'p2-done') {
-      s.say([
-        { speaker: 'riley', text: '(Riley is on the bus, forehead on the window, watching the hills go by.)' },
-        { speaker: 'console', text: 'Every day is played. Riley’s islands and memories now show how it all went. Part 3 isn’t open yet.' },
-      ]);
+    if (s.objective === 'p3-final') {
+      const explored = ['imagination', 'dreams', 'subconscious'].filter((a) => s.progress.visited.includes(a)).length;
+      s.say(
+        [
+          { speaker: s.active, text: 'This is it. Something big is happening at dinner tonight. Everything Riley’s been through this week is going to matter.' },
+          ...(explored < 3 ? [{ speaker: 'console' as const, text: `You’ve explored ${explored} of the 3 deeper places in Riley’s mind. What you find there can change how this ends. You can go now, or begin.` }] : []),
+        ],
+        undefined,
+        [
+          { label: 'Begin the turning point', run: () => this.beginFinale() },
+          { label: 'Not yet', run: () => undefined },
+        ],
+      );
+      return true;
+    }
+    if (s.objective === 'complete') {
+      s.setEndingOpen(true);
       return true;
     }
     if (s.mind && s.objective === 'p2-day') {
@@ -532,6 +551,17 @@ export class HQScene extends WorldScene {
 
   private endCinematic() {
     const s = useGame.getState();
+    if (this.fin) {
+      s.setConsole('situation');
+      s.say(
+        [
+          { speaker: 'console', text: 'Day 7. The turning point. Four steps: the news, what Riley holds on to, who she talks to, and the family meeting.' },
+          { speaker: 'joy', text: 'Okay, team. Whatever happens next, all of us need to be in on it.' },
+        ],
+        () => this.runFinaleMoment(FINALE_NEWS, PIP_BUDGET),
+      );
+      return;
+    }
     const sc = this.p2scenario;
     if (!sc) return;
     s.setConsole('situation');
@@ -585,7 +615,9 @@ export class HQScene extends WorldScene {
     const mix = this.p2mix!;
     this.minigame = null;
     s.setMinigame(null);
-    const r = resolveMoment(m, mix, mg.score, mg.emotion);
+    // practised emotions land their intent more easily
+    const bonus = deliveryBonus(levelOf(s.progress.xp[mg.emotion]));
+    const r = resolveMoment(m, mix, Math.min(1, mg.score + bonus), mg.emotion);
     s.commitMoment(m.id, r, mix);
     s.setConsole('outcome');
     const lead = EMOTIONS[r.lead].name;
@@ -610,6 +642,156 @@ export class HQScene extends WorldScene {
       if (st.scenario && st.scenario.moment < this.p2scenario!.moments.length) this.runMoment();
       else this.wrapScenario();
     });
+  }
+
+  // ───────────────────────────── Part 3: the turning point ─────────────────────────────
+
+  private beginFinale() {
+    const s = useGame.getState();
+    s.beginFinale();
+    this.fin = { phase: 0 };
+    this.seatTeam();
+    this.p2script = FINALE_INTRO;
+    this.p2t = 0;
+    this.screenFlash = 1;
+    this.game.audio.whoosh(true);
+    s.setConsole('cinematic');
+    this.game.audio.playTrack('finale');
+  }
+
+  private finLeads(): (EmotionId | null)[] {
+    const f = useGame.getState().finale;
+    const leads: (EmotionId | null)[] = (f?.mixes ?? []).map((m) => EMOTION_ORDER.reduce((a, e) => (m[e] > m[a] ? e : a), 'joy' as EmotionId));
+    // the reflection sits between the news and the call
+    if (leads.length >= 1) leads.splice(1, 0, f?.reflection[0]?.emotion ?? null);
+    while (leads.length < 4) leads.push(null);
+    return leads.slice(0, 4);
+  }
+
+  private runFinaleMoment(m: MomentDef, budget: number) {
+    const s = useGame.getState();
+    this.p2moment = m;
+    this.p2script = m.screen;
+    this.screenFlash = 0.8;
+    s.setConsole('situation');
+    const index = m === FINALE_NEWS ? 0 : m === FINALE_MEETING ? 3 : 2;
+    s.say(m.situation(s.flags), () => {
+      const st = useGame.getState();
+      st.clearMix();
+      useGame.setState({
+        mixInfo: {
+          title: m.title,
+          prompt: m.prompt,
+          index,
+          count: 4,
+          leads: this.finLeads(),
+          budget,
+          note: budget > PIP_BUDGET ? `This is the big one: ${budget} influence to share. Every emotion can be heard if you let them.` : undefined,
+        },
+      });
+      st.setConsole('mix');
+    });
+  }
+
+  private resolveFinale(mg: Minigame) {
+    const s = useGame.getState();
+    const m = this.p2moment!;
+    const mix = this.p2mix!;
+    this.minigame = null;
+    s.setMinigame(null);
+    useGame.setState({ mixInfo: null });
+    const bonus = deliveryBonus(levelOf(s.progress.xp[mg.emotion]));
+    const r = resolveMoment(m, mix, Math.min(1, mg.score + bonus), mg.emotion);
+    s.commitFinale(m.id, r, mix);
+    s.setConsole('outcome');
+    const lead = EMOTIONS[r.lead].name;
+    const helpers = EMOTION_ORDER.filter((e) => e !== r.lead && mix[e] > 0).map((e) => EMOTIONS[e].name);
+    s.showToast(r.overload ? `${lead} took over completely` : helpers.length ? `${lead} led, with ${helpers.join(' and ')}` : `${lead} led`, EMOTIONS[r.lead].color);
+    if (r.overload) {
+      this.camera.shake(8);
+      this.game.audio.thud();
+    }
+    for (const a of this.actors) {
+      if (r.overload) a.setPose(a.id === r.lead ? 'ability' : a.id === 'fear' ? 'scared' : 'slump', 1.6);
+      else if (mix[a.id] > 0) a.setPose('cheer', 1.4);
+    }
+    s.say(r.lines, () => this.nextFinalePhase());
+  }
+
+  private nextFinalePhase() {
+    if (!this.fin) return;
+    this.fin.phase += 1;
+    const s = useGame.getState();
+    if (this.fin.phase === 1) {
+      // what does Riley hold on to? The memories she kept (and lost) shape this
+      this.p2script = null;
+      s.say(
+        [
+          { speaker: 'sadness', text: 'Before she decides, Riley lies awake, remembering. Which memories does she hold on to tonight?' },
+          { speaker: 'console', text: 'Choose up to three memories from Long-Term. Their colours, and what each of you sees in them, will be part of her answer.' },
+        ],
+        () => useGame.getState().setConsole('reflect'),
+      );
+    } else if (this.fin.phase === 2) this.runFinaleMoment(FINALE_TALK(s.flags), PIP_BUDGET);
+    else if (this.fin.phase === 3) this.runFinaleMoment(FINALE_MEETING, FINALE_MEETING_BUDGET);
+    else this.endFinale();
+  }
+
+  /** Called by the reflection panel. */
+  finishReflection(ids: string[]) {
+    const s = useGame.getState();
+    if (!this.fin || s.consoleStage !== 'reflect') return;
+    s.setReflection(ids);
+    const mind = useGame.getState().mind!;
+    const lines: { speaker: EmotionId | 'console' | 'narrator'; text: string }[] = [];
+    const colours = new Set<EmotionId>();
+    for (const id of ids) {
+      const e = getEntry(id, mind);
+      const st = mind.memories[id];
+      if (!e || !st) continue;
+      colours.add(st.emotion);
+      lines.push({ speaker: st.emotion, text: `“${e.title}.” ${e.lens[st.emotion]}` });
+    }
+    if (ids.includes('sealed-house')) lines.push({ speaker: 'sadness', text: 'And the old house. She can look at it now. It doesn’t stop counting just because she likes it here.' });
+    if (!ids.length) lines.push({ speaker: 'fear', text: 'She doesn’t want to remember anything right now. That’s... a choice too.' });
+    else if (colours.size >= 3) lines.push({ speaker: 'joy', text: 'Look at all those colours. Every one of us is in there.' });
+    else if (colours.size === 1 && colours.has('joy')) lines.push({ speaker: 'joy', text: 'All gold! ...Is that the whole story, though?' });
+    else if (colours.size === 1) lines.push({ speaker: [...colours][0], text: 'Just one colour tonight. That’s how it feels right now.' });
+    const lost = Object.values(mind.memories).filter((m) => m.status === 'forgotten' || m.status === 'released').length;
+    if (lost) lines.push({ speaker: 'narrator', text: `(${lost} other memor${lost === 1 ? 'y has' : 'ies have'} faded away this week. Riley can’t reach for those.)` });
+    s.setConsole('situation');
+    s.say(lines, () => this.nextFinalePhase());
+  }
+
+  private endFinale() {
+    const s = useGame.getState();
+    const id = s.concludeFinale();
+    if (!id) return;
+    const def = ENDINGS[id];
+    this.p2script = def.scene;
+    this.p2t = 0;
+    this.screenFlash = 1;
+    this.game.audio.coreMemory();
+    s.discover(`ending-${id}`);
+    s.setConsole('ending');
+    const heard = useGame.getState().ending?.heard ?? [];
+    s.say(
+      [
+        { speaker: 'console', text: `Ending: “${def.title}”.` },
+        { speaker: 'narrator', text: def.summary },
+        { speaker: 'narrator', text: def.decision },
+        ...def.epilogue,
+        ...(heard.length >= 4 ? [{ speaker: 'joy' as const, text: 'Every one of us had a job tonight. ' + heard.map((e) => PURPOSE_LINE[e]).join(' ') }] : []),
+      ],
+      () => {
+        this.fin = null;
+        this.p2script = null;
+        this.p2moment = null;
+        this.exitConsole();
+        useGame.getState().setEndingOpen(true);
+        this.game.audio.playTrack('hq');
+      },
+    );
   }
 
   private wrapScenario() {
@@ -904,7 +1086,8 @@ export class HQScene extends WorldScene {
           if (ui) useGame.getState().setMinigame({ ...ui, progress: mg.progress });
         }
         if (mg.done) {
-          if (this.p2scenario) this.resolveP2(mg);
+          if (this.fin) this.resolveFinale(mg);
+          else if (this.p2scenario) this.resolveP2(mg);
           else this.resolveBeat(mg);
         }
       }

@@ -4,7 +4,7 @@ import type { IslandId } from '../game/content/world';
 import { ISLANDS } from '../game/content/world';
 import { getGame } from '../game/Game';
 import { SCENARIO_BY_DAY } from '../game/scenario/scenarios';
-import type { IslandScene } from '../game/scenes/islands/IslandScene';
+import type { ActivityScene } from '../game/ActivityScene';
 import { TOTAL_MEMORIES, allEntries } from '../game/systems/library';
 import type { MemStatus, StatKey } from '../game/systems/mind';
 import { BAND_LABEL, STAT_KEYS, STAT_LABEL, emotionShare, stabilityBand } from '../game/systems/mind';
@@ -335,7 +335,7 @@ export function ActivityPanel() {
       </div>
       <div className="cpanel__row">
         {mg.primary && mg.mode !== 'none' && <PrimaryButton key={activity} label={mg.primary} mode={mg.mode} />}
-        <button className="ghost" onClick={() => (getGame()?.current as IslandScene | undefined)?.endActivity?.(false)}>
+        <button className="ghost" onClick={() => (getGame()?.current as ActivityScene | undefined)?.endActivity?.(false)}>
           Stop
         </button>
       </div>

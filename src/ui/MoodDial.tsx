@@ -11,7 +11,7 @@ export function MoodDial() {
   const allowed = useGame(canSwitch);
   const setActive = useGame((s) => s.setActive);
   const E = EMOTIONS[active];
-  const focused = useGame((s) => !!s.activity || s.consoleStage === 'cinematic' || s.consoleStage === 'mix' || s.consoleStage === 'minigame');
+  const focused = useGame((s) => !!s.activity || s.consoleStage === 'cinematic' || s.consoleStage === 'mix' || s.consoleStage === 'minigame' || s.consoleStage === 'reflect' || s.consoleStage === 'ending' || s.endingOpen);
   if (focused) return null;
   return (
     <nav className="dial" aria-label="Choose an emotion to control">

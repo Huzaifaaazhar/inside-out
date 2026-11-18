@@ -24,7 +24,7 @@ function Memo() {
   if (objective === 'meet' || atConsole) return null;
   return (
     <aside className={`memo${fresh ? ' memo--fresh' : ''}`} aria-live="polite">
-      <span className="memo__label">{mind ? `Day ${Math.min(mind.day, 6)}` : objective === 'free' ? 'Free play' : 'Right now'}</span>
+      <span className="memo__label">{mind ? `Day ${Math.min(mind.day, 7)}` : objective === 'free' ? 'Free play' : 'Right now'}</span>
       {objectiveText({ objective, mind })}
     </aside>
   );

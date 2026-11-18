@@ -17,6 +17,25 @@ import { FamilyIsland } from './scenes/islands/FamilyIsland';
 import { FriendshipIsland } from './scenes/islands/FriendshipIsland';
 import { GoofballIsland } from './scenes/islands/GoofballIsland';
 import { HockeyIsland } from './scenes/islands/HockeyIsland';
+import { ImaginationScene } from './scenes/ImaginationScene';
+import { DreamScene } from './scenes/DreamScene';
+import { SubconsciousScene } from './scenes/SubconsciousScene';
+import type { TrackId } from '../engine/music';
+
+const TRACK: Record<SceneId, TrackId> = {
+  opening: 'title',
+  hq: 'hq',
+  memory: 'memory',
+  fading: 'fading',
+  islands: 'islands',
+  'isle-family': 'family',
+  'isle-friendship': 'friendship',
+  'isle-hockey': 'hockey',
+  'isle-goofball': 'goofball',
+  imagination: 'imagination',
+  dreams: 'dreams',
+  subconscious: 'subconscious',
+};
 
 interface Transition {
   kind: TransitionKind;
@@ -68,6 +87,9 @@ export class Game {
       'isle-friendship': new FriendshipIsland(this),
       'isle-hockey': new HockeyIsland(this),
       'isle-goofball': new GoofballIsland(this),
+      imagination: new ImaginationScene(this),
+      dreams: new DreamScene(this),
+      subconscious: new SubconsciousScene(this),
     };
     this.current = this.scenes.opening;
 
@@ -83,6 +105,8 @@ export class Game {
         useGame.setState({ pendingTravel: null });
       }
       if (s.muted !== prev.muted) this.audio.setMuted(s.muted);
+      if (s.musicVolume !== prev.musicVolume || s.sfxVolume !== prev.sfxVolume) this.audio.setVolumes(s.musicVolume, s.sfxVolume);
+      if (s.consoleStage !== prev.consoleStage && this.current.id === 'hq') this.audio.playTrack(this.trackFor('hq'));
       if (s.phase === 'opening' && prev.phase !== 'opening') {
         this.switchTo('opening');
       }
@@ -98,6 +122,9 @@ export class Game {
 
     window.addEventListener('resize', this.resize);
     this.resize();
+    const s0 = useGame.getState();
+    this.audio.setVolumes(s0.musicVolume, s0.sfxVolume);
+    this.audio.playTrack('title');
   }
 
   start() {
@@ -152,7 +179,18 @@ export class Game {
     this.current.exit();
     this.current = this.scenes[id];
     this.current.enter(spawn);
-    if (id !== 'opening') useGame.setState({ area: id });
+    if (id !== 'opening') {
+      useGame.setState({ area: id });
+      useGame.getState().visitArea(id);
+    }
+    this.audio.playTrack(this.trackFor(id));
+  }
+
+  /** The finale gets its own score while it plays at the console. */
+  trackFor(id: SceneId): TrackId {
+    const s = useGame.getState();
+    if (id === 'hq' && s.objective === 'p3-final' && s.consoleStage !== 'off') return 'finale';
+    return TRACK[id];
   }
 
   /** Travel with a transition. */

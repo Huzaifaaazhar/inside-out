@@ -819,37 +819,312 @@ button {
   font-weight: 700;
 }
 
-/* map */
-.map {
-  width: min(980px, 100%);
+/* day 7 reflection */
+.reflect__list {
+  list-style: none;
+  margin: 10px 0 12px;
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  max-height: min(34vh, 300px);
+  overflow: auto;
 }
-.map svg {
+.reflect__mem {
   width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 22px;
-}
-.map .node {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 2px solid rgba(185, 167, 245, 0.3);
+  background: rgba(12, 7, 38, 0.45);
+  color: var(--glass);
   cursor: pointer;
+  min-height: 56px;
 }
-.map .node:focus-visible {
-  outline: none;
+.reflect__mem[aria-pressed='true'] {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 22%, rgba(12, 7, 38, 0.6));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 50%, transparent);
 }
-.map .node:focus-visible .ring,
-.map .node:hover .ring {
-  stroke: var(--glass);
-  stroke-width: 5;
-}
-.map .node[aria-disabled='true'] {
+.reflect__mem:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
-.map__legend {
-  display: flex;
+.reflect__orb {
+  grid-row: span 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--c) 40%, color-mix(in srgb, var(--c) 60%, #000) 100%);
+  box-shadow: 0 0 12px var(--c);
+}
+.reflect__title {
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.reflect__meta {
+  font-size: 13px;
+  color: var(--lilac);
+  font-weight: 700;
+}
+.mix__note {
+  color: #fff1b0;
+  font-size: 15px !important;
+  margin-top: 4px !important;
+}
+
+/* the ending */
+.scrim--ending {
+  background: radial-gradient(circle at 50% 30%, rgba(58, 39, 128, 0.85), rgba(7, 4, 26, 0.92));
+}
+.ending {
+  width: min(780px, 100%);
+  text-align: left;
+}
+.ending__kicker {
+  margin: 0 !important;
+  font: 800 14px var(--font-display) !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.ending h2 {
+  outline: none;
+  font-size: clamp(32px, 5vw, 48px);
+  color: #fff1b0;
+}
+.ending h3 {
+  margin: 18px 0 8px;
+  font: 800 20px var(--font-display);
+}
+.ending__summary {
+  font-size: 19px !important;
+}
+.ending__decision {
+  font-weight: 800;
+  color: var(--lilac);
+}
+.ending__voices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.ending__voices li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  padding: 6px 10px;
+  border-radius: 18px;
+  background: rgba(12, 7, 38, 0.35);
+  opacity: 0.6;
+}
+.ending__voices li[data-heard] {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 60%, transparent);
+}
+.ending__voices strong {
+  display: block;
+  color: var(--c);
+  font-family: var(--font-display);
+}
+.ending__share {
+  font: 700 13px var(--font-body, Nunito);
+  color: var(--lilac);
+  margin-left: 6px;
+}
+.ending__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 6px 18px;
+  margin: 16px 0 6px;
+}
+.ending__stats div {
+  display: grid;
+  gap: 2px;
+}
+.ending__stats dt {
+  font-weight: 800;
+  font-size: 14px;
+}
+.ending__stats dd {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.ending__found {
+  font-weight: 800;
+  color: #fff1b0;
+}
+.ghost.danger {
+  border-color: #ff8a7a;
+  color: #ffd0c8;
+}
+
+/* mind atlas: a living model of the mind, projected full-screen */
+.atlas {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  background: #0c0726;
+  animation: fade 0.3s ease both;
+}
+.atlas__board {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.atlas__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.atlas__head {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: min(640px, calc(100% - 32px));
+  pointer-events: none;
+}
+.atlas__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 800;
+  color: var(--glass);
+  text-shadow: 0 3px 0 rgba(7, 4, 26, 0.6);
+}
+.atlas__head p {
+  margin: 4px 0 0;
+  color: var(--lilac);
+  font-weight: 700;
+  font-size: 15px;
+}
+.atlas__spot {
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  margin: -64px 0 0 -64px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: var(--glass);
+  padding: 0;
+}
+.atlas__spot.is-small {
+  width: 92px;
+  height: 92px;
+  margin: -46px 0 0 -46px;
+}
+.atlas__spot:hover,
+.atlas__spot:focus-visible,
+.atlas__spot.is-sel {
+  outline: none;
+  border-color: var(--c);
+  box-shadow: 0 0 0 6px rgba(243, 238, 255, 0.12), 0 0 40px var(--c);
+}
+.atlas__spot.is-here::after {
+  content: 'You are here';
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 800 13px var(--font-display);
+  color: #fff1b0;
+  background: rgba(12, 7, 38, 0.8);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.atlas__label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 2px);
+  white-space: nowrap;
+  font: 800 16px var(--font-display);
+  text-shadow: 0 2px 0 rgba(7, 4, 26, 0.8), 0 0 10px rgba(7, 4, 26, 0.9);
+}
+.atlas__spot.is-small .atlas__label {
+  font-size: 14px;
+}
+.atlas__spot.is-locked .atlas__label {
+  color: #a99be0;
+}
+.atlas__card {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(380px, calc(100% - 32px));
+  background: linear-gradient(180deg, rgba(58, 43, 114, 0.95), rgba(31, 21, 72, 0.95));
+  border: 3px solid var(--c, var(--brass));
+  border-radius: 26px;
+  padding: 18px 20px;
+  box-shadow: 0 20px 50px rgba(7, 4, 26, 0.6);
+}
+.atlas__card h3 {
+  margin: 0;
+  font: 800 24px var(--font-display);
+}
+.atlas__card p {
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+.atlas__meta {
+  color: #fff1b0;
+  font-weight: 700;
+}
+.atlas__why {
+  color: var(--lilac);
+  font-weight: 700;
+}
+.atlas__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.atlas__here {
+  font: 800 16px var(--font-display);
+  color: #fff1b0;
+}
+@media (max-width: 700px) {
+  .atlas__card {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    padding: 14px 16px;
+  }
+  .atlas__head p {
+    display: none;
+  }
+  .atlas__spot {
+    width: 88px;
+    height: 88px;
+    margin: -44px 0 0 -44px;
+  }
+  .atlas__spot.is-small {
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+  }
+  .atlas__label {
+    font-size: 13px;
+  }
 }
 
 /* ───────────────────────── keyframes ───────────────────────── */

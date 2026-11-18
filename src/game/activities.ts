@@ -20,8 +20,10 @@ export abstract class Activity {
   abstract readonly instruction: string;
   abstract readonly accent: string;
   readonly primaryLabel: string = 'Go';
-  readonly mode: 'tap' | 'hold' = 'tap';
+  readonly mode: 'tap' | 'hold' | 'none' = 'tap';
   rect: Rect = { x: 0, y: 0, w: 1, h: 1 };
+  /** Discrete keys pressed this frame, for activities that need more than one button. */
+  keys: string[] = [];
   progress = 0;
 
   constructor(protected sfx: AudioEngine, protected particles: Particles) {}

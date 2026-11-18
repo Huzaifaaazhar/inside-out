@@ -26,7 +26,7 @@ export interface Deltas {
   islands?: Partial<IslandStability>;
 }
 
-export type MemStatus = 'core' | 'long-term' | 'faded' | 'forgotten' | 'released';
+export type MemStatus = 'core' | 'long-term' | 'faded' | 'forgotten' | 'released' | 'sealed';
 export interface MemState {
   emotion: EmotionId;
   swirl: EmotionId[];
@@ -449,7 +449,7 @@ export function runNight(input: MindState, library: MemoryEntry[], flags: Record
   const memories = { ...s.memories };
   for (const e of library) {
     const m = memories[e.id];
-    if (!m || e.significance === 'core' || m.status === 'core' || m.status === 'released') continue;
+    if (!m || e.significance === 'core' || m.status === 'core' || m.status === 'released' || m.status === 'sealed') continue;
     const limit = FADE_AFTER[e.significance === 'important' ? 'important' : 'everyday'];
     const age = s.day - m.lastSeen;
     if (m.status === 'long-term' && age >= limit) {

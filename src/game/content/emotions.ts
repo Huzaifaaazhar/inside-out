@@ -109,7 +109,7 @@ export const EMOTIONS: Record<EmotionId, EmotionDef> = {
   },
 };
 
-export type SpeakerId = EmotionId | 'riley' | 'mote' | 'priya' | 'theo' | 'teacher' | 'narrator' | 'console' | 'mum' | 'dad' | 'dani' | 'coach' | 'kidA' | 'kidB' | 'kidC' | 'wisp';
+export type SpeakerId = EmotionId | 'riley' | 'mote' | 'priya' | 'theo' | 'teacher' | 'narrator' | 'console' | 'mum' | 'dad' | 'dani' | 'coach' | 'kidA' | 'kidB' | 'kidC' | 'wisp' | 'lumen' | 'fizz' | 'wobble' | 'bram' | 'bolt' | 'hush' | 'grandpa';
 
 export const SPEAKERS: Record<SpeakerId, { name: string; color: string }> = {
   joy: { name: 'Joy', color: EMOTIONS.joy.color },
@@ -132,4 +132,11 @@ export const SPEAKERS: Record<SpeakerId, { name: string; color: string }> = {
   kidB: { name: 'Jade', color: '#E8516A' },
   kidC: { name: 'Sam', color: '#52C46B' },
   wisp: { name: 'Wisp', color: '#C8C2D6' },
+  lumen: { name: 'Director Lumen', color: '#FFE58A' },
+  fizz: { name: 'Fizz', color: '#C9CFE8' },
+  wobble: { name: 'Wobble', color: '#FF7FB0' },
+  bram: { name: 'Bram', color: '#8C93B8' },
+  bolt: { name: 'Bolt', color: '#A7B0D6' },
+  hush: { name: 'The Hush', color: '#6E79B8' },
+  grandpa: { name: 'Grandpa', color: '#C58B5A' },
 };

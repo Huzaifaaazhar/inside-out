@@ -6,6 +6,7 @@ import type { HQScene } from '../game/scenes/HQScene';
 import { useGame } from '../state/store';
 import { Key } from './icons';
 import { MixPanel } from './MixPanel';
+import { ReflectPanel } from './FinaleUI';
 import { SCENARIOS } from '../game/scenario/scenarios';
 
 /** A button that drives the engine's "primary" input: tap or hold, by pointer or keyboard. */
@@ -62,6 +63,7 @@ export function ConsolePanel() {
   const run = useGame((s) => s.scenario);
   if (dialogue) return null;
   if (stage === 'mix') return <MixPanel />;
+  if (stage === 'reflect') return <ReflectPanel />;
   if (stage === 'cinematic')
     return (
       <button className="skip" style={{ top: 'auto', bottom: 24, right: 24 }} onClick={() => (getGame()?.scenes.hq as HQScene).skipCinematic()}>

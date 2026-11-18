@@ -8,6 +8,7 @@ import { HEAD_Y, defaultCharState, drawEmotion } from './art/characters';
 import type { EmotionId } from './content/emotions';
 import { EMOTIONS } from './content/emotions';
 import { Scene } from './Scene';
+import { abilityRangeBonus, levelOf } from './systems/progress';
 
 const pick = <T,>(arr: T[]) => arr[(Math.random() * arr.length) | 0];
 
@@ -126,7 +127,7 @@ export abstract class WorldScene extends Scene {
   nearest: Interactable | null = null;
   private pendingInteract: Interactable | null = null;
   private timers: { t: number; fn: () => void }[] = [];
-  private effects: Effect[] = [];
+  protected effects: Effect[] = [];
   private abilityCooldown = 0;
   /** Swallows input for a moment after an overlay closes, so one key press never does two things. */
   private unblockGrace = 0;
@@ -220,7 +221,8 @@ export abstract class WorldScene extends Scene {
       if (!fn) continue;
       const d = Math.abs(it.x - p.x);
       const pr = it.priority ?? 0;
-      if (d <= (it.abilityRange ?? 420) && (pr > bestP || (pr === bestP && d < bestD))) {
+      const reach = (it.abilityRange ?? 420) * abilityRangeBonus(levelOf(useGame.getState().progress.xp[id]));
+      if (d <= reach && (pr > bestP || (pr === bestP && d < bestD))) {
         best = it;
         bestD = d;
         bestP = pr;
@@ -229,8 +231,10 @@ export abstract class WorldScene extends Scene {
     if (best) {
       const fn = best.abilities![id]!;
       this.later(0.4, fn);
+      useGame.getState().gain(id, 3);
     } else {
       this.later(0.5, () => p.say(pick(E.abilityIdle), 2.8));
+      useGame.getState().gain(id, 1);
     }
   }
 
