@@ -478,7 +478,9 @@ const check = (name, ok, detail = '') => {
   check('the Mind Atlas opens in-world', !!(await page.$('.atlas')));
   check('every visited place can be reached from the atlas', (await page.$$('.atlas__spot:not(.is-locked)')).length >= 10, `${(await page.$$('.atlas__spot:not(.is-locked)')).length} reachable`);
   await page.click('.atlas__spot[aria-label^="Headquarters"]');
-  await page.click('.atlas__card .primary');
+  await wait(200);
+  // hovering selects a place, so a click usually travels straight away; otherwise use the card
+  if (await page.$('.atlas__card .primary')) await page.click('.atlas__card .primary');
   await wait(1800);
   check('travelling by atlas works', (await st()).area === 'hq');
 
