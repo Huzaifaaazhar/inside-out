@@ -396,9 +396,9 @@ const check = (name, ok, detail = '') => {
 
 
   // ═════════════════════════ PART 3: THE COMPLETE MIND ═════════════════════════
-  await page.click('.report button:has-text("Close")').catch(() => {});
-  await page.keyboard.press('Escape');
+  if ((await st()).reportOpen) await page.keyboard.press('Escape');
   await wait(400);
+  check('nothing is left open before exploring', !(await st()).reportOpen && !(await st()).menuOpen);
 
   // ───────── Imagination Land: hidden discoveries for each emotion ─────────
   await travel('islands', 3300);

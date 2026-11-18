@@ -267,10 +267,10 @@ export class DreamScene extends ActivityScene {
       ctx.quadraticCurveTo(x + 160, 760 - h - 80, x + 320, 760 - h);
       ctx.lineTo(x + 320, 760);
       ctx.fill();
-      ctx.fillStyle = 'rgba(255,229,138,0.5)';
-      ctx.font = `800 40px ${FONT_DISPLAY}`;
+      ctx.fillStyle = 'rgba(255,229,138,0.18)';
+      ctx.font = `800 28px ${FONT_DISPLAY}`;
       ctx.textAlign = 'center';
-      ctx.fillText(String(i + 2), x + 160, 760 - h + 60);
+      ctx.fillText(String(i + 2), x + 160, 760 - h + 34);
     }
     // sweeping searchlights
     ctx.globalCompositeOperation = 'lighter';

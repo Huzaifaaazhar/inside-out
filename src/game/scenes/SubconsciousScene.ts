@@ -466,6 +466,10 @@ export class SubconsciousScene extends WorldScene {
     ctx.restore();
 
     this.drawDarkness(ctx);
+    ctx.save();
+    cam.apply(ctx, 1);
+    this.drawLabels(ctx);
+    ctx.restore();
     this.drawKeys(ctx);
     this.drawMoodLight(ctx);
     ctx.save();
@@ -491,7 +495,7 @@ export class SubconsciousScene extends WorldScene {
     d.setTransform(0.5, 0, 0, 0.5, 0, 0);
     d.globalCompositeOperation = 'source-over';
     d.clearRect(0, 0, STAGE_W, STAGE_H);
-    d.fillStyle = 'rgba(3,4,16,0.9)';
+    d.fillStyle = 'rgba(3,4,16,0.86)';
     d.fillRect(0, 0, STAGE_W, STAGE_H);
     d.globalCompositeOperation = 'destination-out';
     const hole = (x: number, y: number, r: number, a = 1) => {
@@ -519,6 +523,28 @@ export class SubconsciousScene extends WorldScene {
     // a coloured rim to the lantern so each emotion's light feels different
     const sp = this.toScreen(p.x, p.y - 80);
     glow(ctx, sp.x, sp.y, LANTERN[a] * 0.9, EMOTIONS[a].color, 0.12);
+  }
+
+  /** Landmark names float above the dark so the cave can be navigated; nearer ones read brighter. */
+  private drawLabels(ctx: Ctx) {
+    const marks: [string, number, number, string][] = [
+      ['Up to The Fading', 160, FLOOR - 450, '#cfc8dc'],
+      ['Bram & Bolt', 560, FLOOR - 250, '#a7b0d6'],
+      ['Echo bells', 900, FLOOR - 500, '#B9A7F5'],
+      ['Dark garden', 1300, FLOOR - 220, '#B4F7E0'],
+      ['Murmuring pool', 1650, FLOOR - 120, '#BBD2FF'],
+      ['Worry jars', 1980, FLOOR - 360, '#C9A6F5'],
+      ['The Hush', this.hushX, FLOOR - 330 * (this.flag('subHushMet') ? 0.85 : 1), '#8C93B8'],
+      [this.flag('subShoulds') ? 'Empty (good)' : '“Shoulds”', 2560, FLOOR - 240, '#C2F0CC'],
+      [this.flag('subChain') ? 'Broken chain' : '“It doesn’t matter”', 3060, FLOOR - 450, '#d8d4ea'],
+      ['The Closed Door', VAULT_X, FLOOR - 480, '#B9A7F5'],
+    ];
+    const px = this.player.x;
+    for (const [text, x, y, col] of marks) {
+      ctx.globalAlpha = clamp(1 - (Math.abs(x - px) - 250) / 900, 0.4, 1);
+      signText(ctx, text, x, y, 16, col);
+    }
+    ctx.globalAlpha = 1;
   }
 
   private drawKeys(ctx: Ctx) {
@@ -550,7 +576,7 @@ export class SubconsciousScene extends WorldScene {
     }
     ctx.fillStyle = 'rgba(220,220,240,0.25)';
     ctx.fillRect(x - 40, 0, 80, FLOOR - 414);
-    signText(ctx, 'Up to The Fading', x, FLOOR - 450, 17, '#cfc8dc');
+    
   }
 
   private drawGuards(ctx: Ctx, x: number, t: number) {
@@ -584,7 +610,7 @@ export class SubconsciousScene extends WorldScene {
         ctx.fillText('z', bx + 50 + ((t * 0.7 + i * 0.5) % 1) * 30, FLOOR - 200 - ((t * 0.7 + i * 0.5) % 1) * 60);
       }
     }
-    signText(ctx, 'Bram & Bolt', x, FLOOR - 250, 16, '#a7b0d6');
+    
   }
 
   private drawBells(ctx: Ctx, x: number, t: number) {
@@ -626,7 +652,7 @@ export class SubconsciousScene extends WorldScene {
       }
       ctx.restore();
     }
-    signText(ctx, 'Echo bells', x, FLOOR - 500, 16, '#B9A7F5');
+    
   }
 
   private drawIce(ctx: Ctx, x: number, t: number) {
@@ -721,7 +747,7 @@ export class SubconsciousScene extends WorldScene {
         ctx.restore();
       }
     }
-    signText(ctx, 'Worry jars', x, FLOOR - 360, 16, '#C9A6F5');
+    
   }
 
   private drawHush(ctx: Ctx, x: number, t: number) {
@@ -750,7 +776,7 @@ export class SubconsciousScene extends WorldScene {
       glow(ctx, x + ex * s, y - 220 * s, 26, '#cfd6ff', 0.4);
       ellipse(ctx, x + ex * s, y - 220 * s, 10 * s, 14 * s * blink, '#e6e9ff');
     }
-    signText(ctx, 'The Hush', x, y - 330 * s, 15, '#8C93B8');
+    
   }
 
   private drawShoulds(ctx: Ctx, x: number, t: number) {
@@ -773,7 +799,7 @@ export class SubconsciousScene extends WorldScene {
         ctx.restore();
       }
     }
-    signText(ctx, done ? 'Empty (good)' : '“Shoulds”', x, FLOOR - 240, 16, '#C2F0CC');
+    
   }
 
   private drawMusicBox(ctx: Ctx, x: number, t: number) {
@@ -805,7 +831,7 @@ export class SubconsciousScene extends WorldScene {
       ctx.ellipse(x + off, yy, 26, 12, broken ? k * 0.3 : 0.1, 0, TAU);
       ctx.stroke();
     }
-    if (!broken) signText(ctx, '“It doesn’t matter”', x, FLOOR - 450, 15, '#d8d4ea');
+    
   }
 
   private drawVault(ctx: Ctx, x: number, t: number) {
@@ -839,6 +865,6 @@ export class SubconsciousScene extends WorldScene {
       glow(ctx, x, FLOOR - 220, 260 * o, '#3D7BFF', 0.6 * o);
       memoryOrb(ctx, x, FLOOR - 220 + Math.sin(t * 1.4) * 8, 46 * o, '#3D7BFF', { t, glowAmt: 1 });
     }
-    signText(ctx, 'The Closed Door', x, FLOOR - 480, 19, '#B9A7F5');
+    
   }
 }
