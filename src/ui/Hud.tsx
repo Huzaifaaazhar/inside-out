@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { EMOTIONS } from '../game/content/emotions';
 import { AREAS } from '../game/content/world';
@@ -57,6 +58,43 @@ function Toast() {
   return (
     <div key={toast.id} className="toast" role="status" style={{ ['--c' as string]: toast.color }}>
       {toast.text}
+    </div>
+  );
+}
+
+/** Hold-to-walk pad for touch screens (tapping the floor still works too). */
+function MovePad() {
+  const hold = (b: 'left' | 'right', down: boolean) => getGame()?.input.setVirtual(b, down);
+  // never leave Riley's operator walking on their own if the pad disappears mid-press
+  useEffect(
+    () => () => {
+      hold('left', false);
+      hold('right', false);
+    },
+    [],
+  );
+  const props = (b: 'left' | 'right') => ({
+    onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      hold(b, true);
+    },
+    onPointerUp: () => hold(b, false),
+    onPointerCancel: () => hold(b, false),
+    onLostPointerCapture: () => hold(b, false),
+    onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  });
+  return (
+    <div className="movepad" role="group" aria-label="Walk">
+      <button aria-label="Walk left" {...props('left')}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 5 8 12l7 7" />
+        </svg>
+      </button>
+      <button aria-label="Walk right" {...props('right')}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m9 5 7 7-7 7" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -140,6 +178,7 @@ export function Hud() {
         </button>
       </div>
       {consoleStage === 'off' && !dialogue && !activity && <Actions />}
+      {consoleStage === 'off' && !dialogue && !activity && <MovePad />}
       <div className="sr-only" aria-live="polite">
         {prompt ? `Press E to ${prompt.charAt(0).toLowerCase()}${prompt.slice(1)}` : ''}
       </div>

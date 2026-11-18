@@ -814,9 +814,178 @@ button {
 .menu-list button:hover {
   border-color: var(--brass);
 }
+.sliders {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+.sliders label {
+  display: grid;
+  grid-template-columns: 120px 1fr 48px;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+}
+.sliders input[type='range'] {
+  width: 100%;
+  accent-color: var(--brass);
+  min-height: 32px;
+}
+.sliders output {
+  text-align: right;
+  color: var(--lilac);
+  font-weight: 800;
+}
+.menu-list .danger {
+  border-color: #ff8a7a;
+  color: #ffd0c8;
+}
 .menu-list .state {
   color: var(--lilac);
   font-weight: 700;
+}
+
+/* journal sections */
+.tabs--big {
+  margin: 14px 0 12px;
+}
+.tabs--big button {
+  font-size: 16px;
+}
+.week {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.week__day {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(12, 7, 38, 0.35);
+  opacity: 0.6;
+}
+.week__day[data-done],
+.week__day[data-now] {
+  opacity: 1;
+}
+.week__day[data-now] {
+  box-shadow: inset 0 0 0 2px var(--brass);
+}
+.week__num {
+  font: 800 16px var(--font-display);
+  color: var(--brass);
+}
+.week__day p {
+  margin: 4px 0 0;
+}
+.week__mem {
+  font-weight: 700;
+  font-size: 15px;
+}
+.week__mem .dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 8px var(--c);
+  vertical-align: -1px;
+}
+.week__log {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.week__log li[data-tone='bad'] {
+  color: #ffb4a6;
+}
+.week__log li[data-tone='good'] {
+  color: #c2f0cc;
+}
+.emolist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.emolist > li {
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(12, 7, 38, 0.35);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent);
+}
+.emolist__head {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.emolist__head strong {
+  display: block;
+  font: 800 20px var(--font-display);
+  color: var(--c);
+  margin-bottom: 4px;
+}
+.emolist__lv {
+  font: 700 14px var(--font-body, Nunito);
+  color: var(--glass);
+  margin-left: 6px;
+}
+.emolist__head .bar {
+  display: block;
+  margin: 2px 0 4px;
+}
+.emolist__purpose {
+  margin: 8px 0 4px !important;
+  font-weight: 700;
+}
+.emolist__ins {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #a99be0;
+}
+.emolist__ins li[data-got] {
+  color: var(--glass);
+  font-weight: 700;
+}
+.disc {
+  display: grid;
+  gap: 16px;
+}
+.disc h3 {
+  margin: 0;
+  font: 800 20px var(--font-display);
+}
+.disc section > p {
+  margin: 2px 0 8px;
+}
+.disc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.disc__list li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(12, 7, 38, 0.35);
+  opacity: 0.6;
+}
+.disc__list li[data-got] {
+  opacity: 1;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c, var(--brass)) 50%, transparent);
 }
 
 /* day 7 reflection */
@@ -1413,9 +1582,51 @@ button {
   }
 }
 
+.movepad {
+  display: none;
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  gap: 10px;
+}
+.movepad button {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 3px solid rgba(243, 238, 255, 0.7);
+  background: rgba(12, 7, 38, 0.6);
+  color: var(--glass);
+  display: grid;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.movepad button:active {
+  background: color-mix(in srgb, var(--accent) 45%, rgba(12, 7, 38, 0.6));
+}
+.movepad svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 @media (hover: none), (pointer: coarse) {
   .actions .interactbtn {
     display: flex;
+  }
+  .movepad {
+    display: flex;
+  }
+}
+@media (pointer: coarse) and (max-width: 700px) {
+  .movepad button {
+    width: 62px;
+    height: 62px;
   }
 }
 

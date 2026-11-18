@@ -2,7 +2,7 @@
  * Keyboard + pointer input sampled once per frame.
  * Pointer coordinates are reported in stage space (the 1600×900 logical stage).
  */
-export type VirtualButton = 'primary';
+export type VirtualButton = 'primary' | 'left' | 'right';
 
 export class Input {
   private down = new Set<string>();
@@ -145,8 +145,8 @@ export class Input {
 
   get axisX() {
     let x = 0;
-    if (this.isDown('ArrowLeft', 'KeyA')) x -= 1;
-    if (this.isDown('ArrowRight', 'KeyD')) x += 1;
+    if (this.isDown('ArrowLeft', 'KeyA') || this.virtualDown.has('left')) x -= 1;
+    if (this.isDown('ArrowRight', 'KeyD') || this.virtualDown.has('right')) x += 1;
     return x;
   }
 

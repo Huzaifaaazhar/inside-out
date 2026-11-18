@@ -107,6 +107,7 @@ export class Game {
       if (s.muted !== prev.muted) this.audio.setMuted(s.muted);
       if (s.musicVolume !== prev.musicVolume || s.sfxVolume !== prev.sfxVolume) this.audio.setVolumes(s.musicVolume, s.sfxVolume);
       if (s.consoleStage !== prev.consoleStage && this.current.id === 'hq') this.audio.playTrack(this.trackFor('hq'));
+      if (s.phase === 'title' && prev.phase !== 'title') this.audio.playTrack('title');
       if (s.phase === 'opening' && prev.phase !== 'opening') {
         this.switchTo('opening');
       }
@@ -182,6 +183,7 @@ export class Game {
     if (id !== 'opening') {
       useGame.setState({ area: id });
       useGame.getState().visitArea(id);
+      useGame.getState().markSaved();
     }
     this.audio.playTrack(this.trackFor(id));
   }

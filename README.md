@@ -2,7 +2,7 @@
 
 A 2D browser game inspired by Pixar's *Inside Out*. You are the new operator of Riley's emotional Headquarters. Choose which emotion drives, use their abilities, and guide an eleven-year-old through her first day at art club.
 
-Part 1 is the foundation: the opening sequence, an explorable Headquarters, the five emotions and a tutorial scenario. Part 2 adds a week of Riley's life. That means memories you can replay and reinterpret, forgotten memories, four walkable personality islands, five real-life scenarios, and a consequence system that remembers what you chose.
+Part 1 is the foundation: the opening sequence, an explorable Headquarters, the five emotions and a tutorial scenario. Part 2 adds a week of Riley's life. That means memories you can replay and reinterpret, forgotten memories, four walkable personality islands, five real-life scenarios, and a consequence system that remembers what you chose. Part 3 completes the mind. It adds Imagination Land, Dream Productions and the Subconscious, emotion progression, the Mind Atlas, a Day 7 turning point with five endings shaped by everything you did, original music, and full save, pause and touch support.
 
 All artwork is original and drawn in code on Canvas 2D: characters, environments, Riley's view and the user-interface art. All sound is synthesized with WebAudio. No film assets, screenshots or audio files are used. The five emotions are original designs. Each one's colour, shape and props come from its role:
 
@@ -20,11 +20,11 @@ All artwork is original and drawn in code on Canvas 2D: characters, environments
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check and production build into dist/
-npm test           # unit tests for the consequence engine (Vitest)
-npm run test:e2e   # full-week browser playthrough; needs `npm run dev` running and Playwright with Chromium
+npm test           # unit tests: consequence engine, progression, endings (Vitest)
+npm run test:e2e   # whole-game browser playthrough (desktop + phones); needs `npm run dev` running and Playwright with Chromium
 ```
 
-Progress saves automatically in the browser. The title screen offers **Continue** or **Start over**.
+Progress saves automatically in the browser. The title screen offers **Continue** or **Start over**. The pause menu can save on demand, return to the title or start a new game.
 
 ## Controls
 
@@ -35,14 +35,14 @@ Progress saves automatically in the browser. The title screen offers **Continue*
 | E (or click an object) | Interact, talk, advance dialogue |
 | Q | Use the current emotion's ability on whatever is nearby |
 | Space | At the console: use the ability on Riley's moment |
-| M | Mind map (travel between areas) |
-| J | Memory journal |
+| M | Mind Atlas (think your way back to any place you've visited) |
+| J | Journal: memories, Riley's week, emotion levels, discoveries |
 | R | How Riley's doing (stats, islands, what's happened) |
 | 1–5 at the mixer | Add influence to an emotion (Shift + 1–5 removes it); Enter sends it to Riley |
 | H | Controls sheet |
 | Esc | Pause, or close whatever is open |
 
-Touch works too: tap the floor to walk, tap objects, and use the on-screen ability and interact buttons.
+Touch works too: hold the arrow pads (or tap the floor) to walk, tap objects, and use the on-screen ability and interact buttons.
 
 ## What's in Part 1
 
@@ -120,22 +120,104 @@ The cliffs now lead by light-bridge to four walkable islands. Each has its own l
 | Hockey | Floodlit rink at night | Penalty shots (aim and timing) | Scoreboard, trophy case, team bench |
 | Goofball | Bubblegum funhouse | Bounce house (charge, jump, catch) | Funhouse mirrors, rubber chicken catapult, suspicious cushion, ice-cream cart |
 
+## What's in Part 3
+
+### Three deeper places, reached on foot
+New places are found by walking there first. After that, the Mind Atlas can take you back.
+
+| Place | How to get there | What makes it different |
+|---|---|---|
+| **Imagination Land** | Ride the daydream ribbon at the far end of the island cliffs | Thick ink outlines, candy colours and a sky that changes its mind. The Kaleidoscope Tower switches the land between *Daydream*, *Upside-down* and *Everything giant*, and every 40–60 seconds the land rearranges itself without asking. |
+| **Dream Productions** | Cross the Gap of Nothing at the far side of Imagination Land | A studio lot at midnight with searchlights. Today's memories come down an intake tube and become tonight's dream. |
+| **The Subconscious** | Take the dark stairwell at the far end of The Fading | A cave where your emotion's light is the only light. Joy carries a wide glow, Fear a small jittery one, Anger a flickering one. |
+
+**Imagination Land** has a hidden secret for each emotion:
+- Joy brings colour back to a grey meadow.
+- Sadness finds Puff, a shy rain-cloud hiding behind a giant teacup.
+- Anger cracks a candy crust over a cave.
+- Fear scans for invisible steps up to a ledge.
+- Disgust sees through the "Perfect Riley" statue.
+
+You'll also meet Wobble, a jelly-cube architect, a trail of doodlebugs that follow you, and Nimbus the cloud-whale. **The Gap of Nothing** is a playable challenge: a fog bank swallows the path, and you build an imagined bridge by matching five silhouettes before the fog closes in.
+
+**Dream Productions** shows how the day becomes a dream:
+1. Director Lumen, a lamp-headed director, and Fizz, a stagehand made of TV static, explain the process.
+2. Pick one of today's memories at the intake desk.
+3. Set the mood at one of five production stations: lighting, rain machine, pyrotechnics, stunt rig or wardrobe. Each station also teaches its own emotion an insight.
+4. Spin the plot-twist machine.
+5. Shoot the dream on Stage 1, a three-lane cue challenge.
+
+The result is *sweet*, *strange* or *restless*, depending on how well the shoot went and what mood you chose. It plays on the premiere screen and changes Riley's night. The night report says what she dreamed.
+
+**The Subconscious** holds a short mission: Riley has been avoiding a memory, and it's locked behind the Closed Door. Bram and Bolt, two sleepy stone guards, explain what the door needs:
+- a tear: Sadness sits with the murmuring pool;
+- a named worry: Fear reads the worry jars;
+- a broken chain: Anger snaps "it doesn't matter".
+
+Along the way:
+- Joy lights a dark garden.
+- Disgust throws out a jar of "shoulds".
+- The Hush, a soft shadow made of everything Riley didn't say, shies away from Joy until someone sits with it.
+- Echo bells replay choices from earlier in the week.
+
+Five **hidden fears** are found by bringing the right light to the right place. The door opens onto *The empty old house*, a sealed memory that then joins Long-Term Memory.
+
+### The turning point (Day 7)
+After the week, Mum's old job offers to take the family back home. The finale has four steps:
+1. **The news**: a mix at the console.
+2. **What Riley holds on to**: choose up to three memories. Their current colours and each emotion's reading of them become part of her answer. Memories that faded or were let go are out of reach. The memory from the Subconscious is only here if you opened the door.
+3. **Who she talks to**: this depends on earlier choices. It's Dani if Riley kept in touch, Priya if she made that friendship, or nobody.
+4. **The family meeting**: a bigger budget of six influence points, so every voice can be heard. One blend needs all five emotions at once.
+
+There are five endings, scored from the whole playthrough:
+
+| Ending | Reached by |
+|---|---|
+| **All of her** (balanced emotional understanding) | Sharing the work across emotions all week, hearing every voice on the final night, and no takeovers |
+| **Closer** (stronger family connection) | Honesty with Mum and Dad, repairing arguments, and Sadness being heard at the meeting |
+| **Both can be true** (improved self-understanding) | Opening the Closed Door, collecting insights and naming hidden fears |
+| **Fine. Everything's fine.** (avoidance of difficult feelings) | Leaning on Joy, masking, and keeping Sadness and Fear quiet |
+| **On her own** (emotional isolation) | Shutting people out, takeovers, and letting friendships and important memories go |
+
+Maximum happiness does not win: an all-Joy run ends in avoidance. The ending screen gives each emotion's share of the week and what it was for. It also tracks which endings you've found and lets you replay the turning point from a snapshot.
+
+### Game systems
+- **Progression.** Every ability use, lens, mix and activity gives that emotion experience. Five levels each. Higher levels make abilities reach further and help mini-game results land. Fifteen **insights** are scattered through the three new places, one per emotion per place.
+- **Journal** (J), with four tabs:
+  - Memories;
+  - Riley's week: each day, the memory it became, and what followed;
+  - Emotions: levels, perks, insights and purpose;
+  - Discoveries: hidden fears, dreams, places and endings.
+- **Mind Atlas** (M). A living model of the mind drawn on canvas, with the islands, HQ tower, shelves and the deep below. Unvisited places are fogged and say how to find them.
+- **Pause menu** (Esc):
+  - save now, with the last-saved time;
+  - music and sound-effect volume;
+  - mute;
+  - reduce motion;
+  - save and return to the title;
+  - start a new game, with confirmation.
+- **Saving.** Progress saves automatically in `localStorage` on every change and is stamped on every area change. Older saves are migrated.
+- **Original music.** A generative score is synthesized live, with its own track for each area, the title and the finale, and crossfades between them.
+- **Touch.** Hold-to-walk pads appear on touch screens, alongside tap-to-walk and the on-screen ability and interact buttons.
+- **Loading.** A boot screen holds until the fonts the canvas uses are ready.
+
 ## Architecture
 
-See [`docs/adr/001-architecture.md`](docs/adr/001-architecture.md) and [`docs/adr/002-consequence-engine.md`](docs/adr/002-consequence-engine.md).
+See [`docs/adr/001-architecture.md`](docs/adr/001-architecture.md), [`docs/adr/002-consequence-engine.md`](docs/adr/002-consequence-engine.md) and [`docs/adr/003-complete-mind.md`](docs/adr/003-complete-mind.md).
 
 ```
-src/engine/        loop-agnostic pieces: input, synthesized audio, camera, particles, drawing helpers
+src/engine/        loop-agnostic pieces: input, synthesized audio and generative music, camera, particles, drawing helpers
 src/game/art/      procedural illustration: characters, HQ, mindscape, Riley's view
 src/game/content/  data: emotions, areas, islands, memory library (scenes + lenses), dialogue
-src/game/systems/  the consequence engine (pure, unit-tested) and memory lookup
+src/game/systems/  pure, unit-tested rules: consequences, progression, ending scoring, memory lookup
 src/game/art/vignette.ts  animated scenes from Riley's life: places, people, props, lenses
-src/game/activities.ts    island activities
-src/game/scenario/ the art club scenario, Riley's week (data) and the five ability mini-games
-src/game/scenes/   Opening, HQ, Memory, Fading, Islands hub, islands/* (four walkable islands)
+src/game/activities*.ts   island activities, the bridge challenge and the dream shoot
+src/game/ActivityScene.ts a walkable scene that can host a framed activity
+src/game/scenario/ the art club scenario, Riley's week, the Day 7 finale and endings (data), and the five ability mini-games
+src/game/scenes/   Opening, HQ, Memory, Fading, Islands hub, islands/*, Imagination, Dream Productions, Subconscious
 src/game/Game.ts   canvas, loop, scene switching and transitions
 src/state/store.ts Zustand store shared by the canvas world and the React overlay
-src/ui/            React overlay: dial, dialogue, console panel, map, sheets, HUD
+src/ui/            React overlay: dial, dialogue, console panel, Mind Atlas, journal, finale and ending, sheets, HUD
 ```
 
 The canvas renders the world. React renders only words and choices. Both talk through one Zustand store: React subscribes with selectors, and the engine reads `getState()` each frame. Adding an area for Part 2 means writing a `WorldScene` subclass and registering it in `Game.ts`. Adding a scenario means adding a data module in the shape of `scenario/artClub.ts`.

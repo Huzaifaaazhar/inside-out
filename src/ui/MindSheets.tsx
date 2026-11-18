@@ -5,6 +5,7 @@ import { ISLANDS } from '../game/content/world';
 import { getGame } from '../game/Game';
 import { SCENARIO_BY_DAY } from '../game/scenario/scenarios';
 import type { ActivityScene } from '../game/ActivityScene';
+import { DiscoveriesTab, EmotionsTab, WeekTab } from './JournalTabs';
 import { TOTAL_MEMORIES, allEntries } from '../game/systems/library';
 import type { MemStatus, StatKey } from '../game/systems/mind';
 import { BAND_LABEL, STAT_KEYS, STAT_LABEL, emotionShare, stabilityBand } from '../game/systems/mind';
@@ -39,6 +40,7 @@ export function Journal() {
   const setJournal = useGame((s) => s.setJournal);
   const setTheatre = useGame((s) => s.setTheatre);
   const [filter, setFilter] = useState<Filter>('all');
+  const [tab, setTab] = useState<'memories' | 'week' | 'emotions' | 'found'>('memories');
   const btn = useFocus<HTMLButtonElement>(open);
   if (!open || !mind) return null;
   const entries = allEntries(mind);
@@ -53,7 +55,7 @@ export function Journal() {
       <div className="sheet journal" role="dialog" aria-modal="true" aria-labelledby="journal-title" onClick={(e) => e.stopPropagation()}>
         <div className="journal__head">
           <div>
-            <h2 id="journal-title">Memory journal</h2>
+            <h2 id="journal-title">Riley’s journal</h2>
             <p>
               {found.length} of {TOTAL_MEMORIES} memories found. {top.n ? `Right now Riley’s memories are mostly ${EMOTIONS[top.e].name.toLowerCase()}.` : ''}
             </p>
@@ -62,6 +64,25 @@ export function Journal() {
             Close
           </button>
         </div>
+        <div className="tabs tabs--big" role="tablist" aria-label="Journal sections">
+          {(
+            [
+              ['memories', 'Memories'],
+              ['week', 'Riley’s week'],
+              ['emotions', 'Emotions'],
+              ['found', 'Discoveries'],
+            ] as const
+          ).map(([id, label]) => (
+            <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {tab === 'week' && <WeekTab mind={mind} />}
+        {tab === 'emotions' && <EmotionsTab />}
+        {tab === 'found' && <DiscoveriesTab mind={mind} />}
+        {tab === 'memories' && (
+          <>
         <div className="journal__colours" aria-label="Memories by colour">
           {colours.map(({ e, n }) => (
             <span key={e} className="chip chip--static" style={{ ['--c' as string]: EMOTIONS[e].color }}>
@@ -108,6 +129,8 @@ export function Journal() {
           {!shown.length && <li className="shelf__empty">Nothing here right now.</li>}
         </ul>
         <p className="journal__hint">Replay a memory to find it. Memories you don’t revisit fade after a few nights and drift into The Fading.</p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -233,7 +256,7 @@ export function NightReport() {
     const s = useGame.getState();
     if (next) s.showToast(`Day ${r.day}: ${next.title}`, '#FFE58A');
     else {
-      s.showToast('Every day is played. See how Riley’s mind turned out.', '#FFE58A');
+      s.showToast('Day 7: something big is coming. Explore the deeper parts of Riley’s mind, then take the console.', '#FFE58A');
       s.setReport(true);
     }
     getGame()?.audio.chime(0);

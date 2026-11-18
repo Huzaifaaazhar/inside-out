@@ -15,3 +15,13 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Hold the loading screen until the fonts the canvas draws with are ready (or a short timeout).
+const boot = document.getElementById('boot');
+if (boot) {
+  const done = () => {
+    boot.classList.add('gone');
+    window.setTimeout(() => boot.remove(), 600);
+  };
+  Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => window.setTimeout(r, 2500))]).then(done, done);
+}
