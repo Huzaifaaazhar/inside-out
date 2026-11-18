@@ -93,7 +93,7 @@ function AtlasInner() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState<AreaId>(area as AreaId);
-  const [box, setBox] = useState({ s: 1, x: 0, y: 0 });
+  const [box, setBox] = useState({ s: 1, x: 0, y: 0, w: 0 });
   const focusRef = useRef<HTMLButtonElement>(null);
   const selRef = useRef(sel);
   selRef.current = sel;
@@ -102,20 +102,34 @@ function AtlasInner() {
     focusRef.current?.focus();
   }, []);
 
-  // fit the board into the window
+  // fit the board into the window; tall, narrow screens get a larger board that scrolls sideways
   useEffect(() => {
     const fit = () => {
       const el = wrap.current;
       if (!el) return;
       const w = el.clientWidth;
       const h = el.clientHeight;
-      const s = Math.min(w / BW, h / BH) * (h > w ? 1.35 : 1);
-      setBox({ s, x: (w - BW * s) / 2, y: (h - BH * s) / 2 });
+      const narrow = h > w;
+      const s = narrow ? Math.min(h / BH, (w / BW) * 2.4) : Math.min(w / BW, h / BH);
+      const innerW = Math.max(w, BW * s);
+      // on narrow screens keep the deep places clear of the info card at the bottom
+      const y = narrow ? Math.max(64, Math.min((h - BH * s) / 2, h - 240 - BH * s)) : (h - BH * s) / 2;
+      setBox({ s, x: (innerW - BW * s) / 2, y, w: innerW });
     };
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
   }, []);
+
+  // start scrolled so the place you're in is in view
+  useEffect(() => {
+    const el = wrap.current;
+    const here = PLACES.find((p) => p.area === area);
+    if (!el || !here || box.w <= el.clientWidth) return;
+    el.scrollLeft = Math.max(0, box.x + here.x * box.s - el.clientWidth / 2);
+    // only on open and when the layout changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [box.w, box.s]);
 
   // animated board
   useEffect(() => {
@@ -157,6 +171,7 @@ function AtlasInner() {
   return (
     <div className="atlas" role="dialog" aria-modal="true" aria-labelledby="atlas-title">
       <div className="atlas__board" ref={wrap}>
+        <div className="atlas__inner" style={{ width: box.w || '100%' }}>
         <canvas ref={canvas} className="atlas__canvas" aria-hidden="true" />
         {PLACES.map((p, i) => {
           const st = unlocked(p);
@@ -169,7 +184,10 @@ function AtlasInner() {
               className={`atlas__spot${here ? ' is-here' : ''}${st.ok ? '' : ' is-locked'}${sel === p.area ? ' is-sel' : ''}${small ? ' is-small' : ''}`}
               style={{ left: box.x + p.x * box.s, top: box.y + p.y * box.s, ['--c' as string]: p.color }}
               aria-label={`${AREAS[p.area].name}. ${here ? 'You are here.' : st.ok ? 'Travel here.' : st.why}`}
-              onFocus={() => setSel(p.area)}
+              onFocus={(e) => {
+                setSel(p.area);
+                e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+              }}
               onMouseEnter={() => setSel(p.area)}
               onClick={() => (sel === p.area ? go(p) : setSel(p.area))}
               onDoubleClick={() => go(p)}
@@ -178,6 +196,7 @@ function AtlasInner() {
             </button>
           );
         })}
+        </div>
       </div>
       <header className="atlas__head">
         <h2 id="atlas-title">Mind Atlas</h2>
