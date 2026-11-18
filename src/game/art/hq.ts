@@ -30,7 +30,7 @@ export function windowVista(ctx: Ctx, x: number, y: number, w: number, h: number
   } else if (kind === 'islands') {
     cloudBank(ctx, x - 200 - shift * 0.4, y + h * 0.9, w + 400, '#8c74d8', 0.5, 3);
     drawIsland(ctx, 'friendship', x + w * 0.3 - shift * 0.7, y + h * 0.6, 0.55, t, islands?.friendship ? 1 : 0);
-    drawIsland(ctx, 'silliness', x + w * 0.78 - shift * 0.5, y + h * 0.66, 0.4, t, islands?.silliness ? 1 : 0);
+    drawIsland(ctx, 'goofball', x + w * 0.78 - shift * 0.5, y + h * 0.66, 0.4, t, islands?.goofball === false ? 0 : 1);
     cloudBank(ctx, x - 200 - shift, y + h * 1.02, w + 400, '#cbbcff', 0.6, 5);
   } else {
     drawMemoryRidges(ctx, x - 300 - shift * 0.5, y + h * 0.65, w + 600, h * 0.35, t, 0.5);
@@ -421,8 +421,9 @@ export function drawCoreHolder(ctx: Ctx, x: number, t: number, shelf: (MemoryDef
   ctx.beginPath();
   ctx.arc(x, baseY - 160, 120, Math.PI * 1.08, Math.PI * 1.92);
   ctx.stroke();
-  for (let i = 0; i < 5; i++) {
-    const a = Math.PI * 1.12 + (i / 4) * Math.PI * 0.76;
+  const n = shelf.length;
+  for (let i = 0; i < n; i++) {
+    const a = Math.PI * 1.12 + (i / (n - 1)) * Math.PI * 0.76;
     const sx = x + Math.cos(a) * 120;
     const sy = baseY - 160 + Math.sin(a) * 120;
     ctx.fillStyle = '#1b1240';

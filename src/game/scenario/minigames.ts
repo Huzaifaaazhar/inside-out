@@ -8,6 +8,9 @@ import type { EmotionId } from '../content/emotions';
 import { EMOTIONS } from '../content/emotions';
 import type { Beat } from './artClub';
 
+/** The parts of a moment each ability's game needs. */
+export type Flavor = Pick<Beat, 'fear' | 'disgust' | 'anger' | 'sadness' | 'joy'>;
+
 export interface MGInput {
   u: number;
   v: number;
@@ -35,7 +38,7 @@ export abstract class Minigame {
   primaryLabel?: string;
   protected rect: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
-  constructor(public beat: Beat, protected sfx: AudioEngine, protected particles: Particles) {}
+  constructor(public beat: Flavor, protected sfx: AudioEngine, protected particles: Particles) {}
 
   setRect(r: Rect) {
     this.rect = r;
@@ -129,7 +132,7 @@ export class ScanGame extends Minigame {
   private found: number[];
   private limit = 14;
 
-  constructor(beat: Beat, sfx: AudioEngine, p: Particles) {
+  constructor(beat: Flavor, sfx: AudioEngine, p: Particles) {
     super(beat, sfx, p);
     this.found = beat.fear.hazards.map(() => 0);
   }
@@ -225,7 +228,7 @@ export class NopeGame extends Minigame {
   private nextAt = 0.4;
   private correct = 0;
 
-  constructor(beat: Beat, sfx: AudioEngine, p: Particles) {
+  constructor(beat: Flavor, sfx: AudioEngine, p: Particles) {
     super(beat, sfx, p);
     this.items = beat.disgust.items.map((it) => ({ ...it, u: 1.15, state: 'moving', t: 0 }));
   }
@@ -500,7 +503,7 @@ export class BrightSideGame extends Minigame {
   private clouds: Cloud[];
   private limit = 12;
 
-  constructor(beat: Beat, sfx: AudioEngine, p: Particles) {
+  constructor(beat: Flavor, sfx: AudioEngine, p: Particles) {
     super(beat, sfx, p);
     const n = beat.joy.clouds.length;
     this.clouds = beat.joy.clouds.map((c, i) => ({
@@ -587,7 +590,7 @@ export class BrightSideGame extends Minigame {
   }
 }
 
-export function createMinigame(id: EmotionId, beat: Beat, sfx: AudioEngine, p: Particles): Minigame {
+export function createMinigame(id: EmotionId, beat: Flavor, sfx: AudioEngine, p: Particles): Minigame {
   switch (id) {
     case 'fear':
       return new ScanGame(beat, sfx, p);

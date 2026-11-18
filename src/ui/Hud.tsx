@@ -3,12 +3,13 @@ import { EMOTIONS } from '../game/content/emotions';
 import { AREAS } from '../game/content/world';
 import { getGame } from '../game/Game';
 import type { WorldScene } from '../game/WorldScene';
-import { OBJECTIVE_TEXT, useGame } from '../state/store';
-import { HelpIcon, Key, MapIcon, PauseIcon, SoundIcon } from './icons';
+import { objectiveText, useGame } from '../state/store';
+import { BookIcon, HeartIcon, HelpIcon, Key, MapIcon, PauseIcon, SoundIcon } from './icons';
 
 function Memo() {
   const objective = useGame((s) => s.objective);
-  const atConsole = useGame((s) => s.consoleStage !== 'off');
+  const mind = useGame((s) => s.mind);
+  const atConsole = useGame((s) => s.consoleStage !== 'off' || !!s.activity);
   const [fresh, setFresh] = useState(false);
   const first = useRef(true);
   useEffect(() => {
@@ -23,8 +24,8 @@ function Memo() {
   if (objective === 'meet' || atConsole) return null;
   return (
     <aside className={`memo${fresh ? ' memo--fresh' : ''}`} aria-live="polite">
-      <span className="memo__label">{objective === 'free' ? 'Free play' : 'Right now'}</span>
-      {OBJECTIVE_TEXT[objective]}
+      <span className="memo__label">{mind ? `Day ${Math.min(mind.day, 6)}` : objective === 'free' ? 'Free play' : 'Right now'}</span>
+      {objectiveText({ objective, mind })}
     </aside>
   );
 }
@@ -94,6 +95,8 @@ export function Hud() {
   const dialogue = useGame((s) => s.dialogue);
   const prompt = useGame((s) => s.prompt);
   const st = useGame.getState;
+  const hasMind = useGame((s) => !!s.mind);
+  const activity = useGame((s) => s.activity);
   return (
     <>
       <Memo />
@@ -103,6 +106,18 @@ export function Hud() {
       <AreaCard />
       <Toast />
       <div className="corner">
+        {hasMind && (
+          <>
+            <button className="iconbtn" aria-label="Open the memory journal" title="Memory journal (J)" onClick={() => st().setJournal(true)}>
+              <BookIcon />
+              <Key>J</Key>
+            </button>
+            <button className="iconbtn" aria-label="How Riley is doing" title="How Riley’s doing (R)" onClick={() => st().setReport(true)}>
+              <HeartIcon />
+              <Key>R</Key>
+            </button>
+          </>
+        )}
         <button className="iconbtn" aria-label={muted ? 'Turn sound on' : 'Turn sound off'} title={muted ? 'Sound off' : 'Sound on'} onClick={() => setMuted(!muted)}>
           <SoundIcon muted={muted} />
         </button>
@@ -124,7 +139,7 @@ export function Hud() {
           <PauseIcon />
         </button>
       </div>
-      {consoleStage === 'off' && !dialogue && <Actions />}
+      {consoleStage === 'off' && !dialogue && !activity && <Actions />}
       <div className="sr-only" aria-live="polite">
         {prompt ? `Press E to ${prompt.charAt(0).toLowerCase()}${prompt.slice(1)}` : ''}
       </div>

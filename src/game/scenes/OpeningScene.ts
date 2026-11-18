@@ -106,7 +106,7 @@ export class OpeningScene extends Scene {
     const t = this.time;
     drawSky(ctx, 0, 0, STAGE_W, STAGE_H, t, '#B9A7F5', 0.75);
     drawMemoryRidges(ctx, -100 - ((t * 6) % 200), 600, STAGE_W + 400, 300, t, 0.5);
-    const isl: IslandId[] = ['family', 'friendship', 'honesty', 'curiosity', 'silliness'];
+    const isl: IslandId[] = ['family', 'friendship', 'honesty', 'curiosity', 'goofball'];
     isl.forEach((id, i) => drawIsland(ctx, id, 160 + i * 320, 560 + (i % 2) * 40, 0.42, t, id === 'friendship' ? 0 : 0.8));
     drawHQTower(ctx, STAGE_W / 2, 900, 0.85, t);
     cloudBank(ctx, -200, 860, STAGE_W + 400, '#8c74d8', 0.7, 4);
@@ -241,7 +241,7 @@ export class OpeningScene extends Scene {
       ['friendship', 470, 430],
       ['honesty', 1130, 440],
       ['curiosity', 1380, 520],
-      ['silliness', 800, 300],
+      ['goofball', 800, 300],
     ];
     for (const [id, x, y] of isl) {
       lightBridge(ctx, STAGE_W / 2, 560, x, y, id === 'friendship' ? '#3CC6B8' : '#FFCF33', t, id === 'friendship' ? 0.2 : 0.8);

@@ -5,9 +5,11 @@ import { ART_CLUB } from '../game/scenario/artClub';
 import type { HQScene } from '../game/scenes/HQScene';
 import { useGame } from '../state/store';
 import { Key } from './icons';
+import { MixPanel } from './MixPanel';
+import { SCENARIOS } from '../game/scenario/scenarios';
 
 /** A button that drives the engine's "primary" input: tap or hold, by pointer or keyboard. */
-function PrimaryButton({ label, mode }: { label: string; mode: 'tap' | 'hold' }) {
+export function PrimaryButton({ label, mode }: { label: string; mode: 'tap' | 'hold' }) {
   const [held, setHeld] = useState(false);
   const timer = useRef<number>(0);
   const set = (down: boolean) => {
@@ -57,11 +59,27 @@ export function ConsolePanel() {
   const active = useGame((s) => s.active);
   const mg = useGame((s) => s.minigame);
   const [hint, setHint] = useState<number | null>(null);
-  if (dialogue || (stage !== 'choose' && stage !== 'minigame')) return null;
+  const run = useGame((s) => s.scenario);
+  if (dialogue) return null;
+  if (stage === 'mix') return <MixPanel />;
+  if (stage === 'cinematic')
+    return (
+      <button className="skip" style={{ top: 'auto', bottom: 24, right: 24 }} onClick={() => (getGame()?.scenes.hq as HQScene).skipCinematic()}>
+        Skip the scene <Key>Space</Key>
+      </button>
+    );
+  if (stage !== 'choose' && stage !== 'minigame') return null;
+  const sc = run ? SCENARIOS.find((x) => x.id === run.id) : null;
   const beat = ART_CLUB.beats[beatIdx];
   const E = EMOTIONS[active];
 
-  const dots = (
+  const dots = sc ? (
+    <div className="beats" aria-label={`Moment ${run!.moment + 1} of ${sc.moments.length}`}>
+      {sc.moments.map((m, i) => (
+        <span key={m.id} data-done={i < run!.moment ? '' : undefined} data-now={i === run!.moment ? '' : undefined} style={i < run!.moment ? { ['--c' as string]: EMOTIONS[run!.results[i].lead].color } : undefined} />
+      ))}
+    </div>
+  ) : (
     <div className="beats" aria-label={`Moment ${beatIdx + 1} of ${ART_CLUB.beats.length}`}>
       {ART_CLUB.beats.map((b, i) => {
         const r = results[i];
@@ -100,7 +118,7 @@ export function ConsolePanel() {
   if (!mg) return null;
   const ME = EMOTIONS[mg.emotion];
   return (
-    <section className="cpanel" aria-label={`${ME.ability.name} mini-game`} style={{ ['--accent' as string]: ME.color, ['--light' as string]: ME.light }}>
+    <section className="cpanel cpanel--dock" aria-label={`${ME.ability.name} mini-game`} style={{ ['--accent' as string]: ME.color, ['--light' as string]: ME.light }}>
       <div className="cpanel__top">
         <h3>{mg.title}</h3>
         {dots}

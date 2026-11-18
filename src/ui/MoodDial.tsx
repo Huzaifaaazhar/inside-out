@@ -3,7 +3,7 @@ import { useGame } from '../state/store';
 import { Portrait } from './Portrait';
 
 export const canSwitch = (s: ReturnType<typeof useGame.getState>) =>
-  s.phase === 'playing' && !s.dialogue && !s.transitioning && (s.consoleStage === 'off' || s.consoleStage === 'choose');
+  s.phase === 'playing' && !s.dialogue && !s.transitioning && !s.activity && !s.theatre && (s.consoleStage === 'off' || s.consoleStage === 'choose');
 
 /** Five emotion orbs on a curved brass rail. The selected one rises and glows. */
 export function MoodDial() {
@@ -11,6 +11,8 @@ export function MoodDial() {
   const allowed = useGame(canSwitch);
   const setActive = useGame((s) => s.setActive);
   const E = EMOTIONS[active];
+  const focused = useGame((s) => !!s.activity || s.consoleStage === 'cinematic' || s.consoleStage === 'mix' || s.consoleStage === 'minigame');
+  if (focused) return null;
   return (
     <nav className="dial" aria-label="Choose an emotion to control">
       <div className="dial__name" aria-live="polite">

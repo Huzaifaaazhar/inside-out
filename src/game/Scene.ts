@@ -4,7 +4,9 @@ import { Particles } from '../engine/particles';
 import type { EmotionId } from './content/emotions';
 import type { Game } from './Game';
 
-export type SceneId = 'opening' | 'hq' | 'memory' | 'islands';
+import type { AreaId } from './content/world';
+
+export type SceneId = 'opening' | AreaId;
 
 export abstract class Scene {
   camera = new Camera();

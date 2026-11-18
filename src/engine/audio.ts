@@ -88,7 +88,7 @@ export class AudioEngine {
     return this.ctx!.currentTime;
   }
 
-  private tone(o: ToneOpts) {
+  tone(o: ToneOpts) {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const t0 = this.now + (o.delay ?? 0);

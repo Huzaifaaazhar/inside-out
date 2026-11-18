@@ -1,4 +1,4 @@
-import { STAGE_H } from '../../engine/camera';
+import { STAGE_H, view } from '../../engine/camera';
 import type { Ctx } from '../../engine/draw';
 import { memoryOrb } from '../../engine/draw';
 import { clamp, damp, easeInOutCubic, lerp } from '../../engine/math';
@@ -32,11 +32,25 @@ import type { Game } from '../Game';
 import { ART_CLUB, TONE_LABEL } from '../scenario/artClub';
 import type { Minigame } from '../scenario/minigames';
 import { createMinigame } from '../scenario/minigames';
+import type { VignetteScript } from '../art/vignette';
+import { renderVignette } from '../art/vignette';
+import type { MomentDef, ScenarioDef } from '../scenario/scenarios';
+import { SCENARIO_BY_DAY } from '../scenario/scenarios';
+import type { Mix } from '../systems/mind';
+import { mixDistinct, mixTotal, resolveMoment } from '../systems/mind';
+import { ISLANDS } from '../content/world';
 import { Actor, WorldScene } from '../WorldScene';
 
 const HOMES: Record<EmotionId, number> = { joy: 1560, sadness: 860, anger: 1990, fear: 2330, disgust: 2640 };
 const CONSOLE_SLOTS: Record<EmotionId, number> = { joy: 1300, sadness: 1410, anger: 1960, fear: 2080, disgust: 1190 };
 const OPERATOR_X = 1585;
+/** What the screen shows between scenarios: Riley at home. */
+const IDLE_VIEW = (evening: boolean): VignetteScript => ({
+  kit: 'bedroom',
+  dur: 10,
+  night: evening,
+  actors: [{ who: 'riley', keys: evening ? [[0, 0.74, 'sit', -1, 'calm']] : [[0, 0.3, 'walk', 1, 'calm'], [5, 0.6, 'stand', 1, 'happy'], [10, 0.3, 'walk', -1, 'calm']] }],
+});
 const TUBE_X = 260;
 const HOLDER_X = 1010;
 const MANUAL_X = 1180;
@@ -67,6 +81,12 @@ export class HQScene extends WorldScene {
   /** Ignore the primary button briefly after "choose" opens, so the key that closed dialogue doesn't fire it. */
   private chooseGrace = 0;
   private screenView: 'hallway' | 'artroom' | 'mural' = 'hallway';
+  // ── Part 2: real-life scenarios ──
+  private p2script: VignetteScript | null = null;
+  private p2t = 0;
+  private p2moment: MomentDef | null = null;
+  private p2mix: Mix | null = null;
+  private p2scenario: ScenarioDef | null = null;
 
   constructor(game: Game) {
     super(game);
@@ -160,7 +180,7 @@ export class HQScene extends WorldScene {
         const filled = s.coreShelf.filter(Boolean) as MemoryDef[];
         s.setInspect({
           kicker: 'Core memories',
-          title: `${filled.length} of 5 islands powered`,
+          title: `${filled.length} of ${s.coreShelf.length} islands powered`,
           body: filled.map((m) => `${m.title}: ${m.text}`).join('\n'),
           color: '#FFCF33',
           extra: s.islands.friendship ? undefined : 'One slot is empty. Friendship Island has been dark since Riley moved.',
@@ -184,13 +204,10 @@ export class HQScene extends WorldScene {
       y: 470,
       range: 200,
       hit: { x: CONSOLE_X - 360, y: 520, w: 720, h: 250 },
-      label: () => {
-        const s = store();
-        if (!s.flags.introDone) return null;
-        return s.flags.scenarioDone ? 'Look through Riley’s eyes' : 'Take the console';
-      },
+      label: () => this.consoleLabel(),
       interact: () => {
         const s = store();
+        if (s.flags.scenarioDone && this.part2Console()) return;
         if (s.flags.scenarioDone) {
           s.say([
             { speaker: 'riley', text: '(Riley is walking home with paint on her sleeve, humming.)' },
@@ -420,6 +437,211 @@ export class HQScene extends WorldScene {
   }
 
   // ─────────────────────────── console & scenario ───────────────────────────
+  // ───────────────────────────── Part 2 ─────────────────────────────
+
+  private consoleLabel(): string | null {
+    const s = useGame.getState();
+    if (!s.flags.introDone) return null;
+    if (!s.flags.scenarioDone) return 'Take the console';
+    if (s.carrying) return 'Look through Riley’s eyes';
+    if (!s.mind) return 'Let Riley sleep (end her first day)';
+    if (s.objective === 'p2-day') return `Start today: “${SCENARIO_BY_DAY[s.mind.day]?.title ?? 'a new day'}”`;
+    if (s.objective === 'p2-done') return 'Look through Riley’s eyes';
+    return 'Let Riley sleep';
+  }
+
+  /** Returns true when Part 2 handled the console press. */
+  private part2Console() {
+    const s = useGame.getState();
+    if (s.carrying) {
+      this.player.say('Core memory first! The holder’s on the left.', 2.8);
+      return true;
+    }
+    if (s.objective === 'p2-done') {
+      s.say([
+        { speaker: 'riley', text: '(Riley is on the bus, forehead on the window, watching the hills go by.)' },
+        { speaker: 'console', text: 'Every day is played. Riley’s islands and memories now show how it all went. Part 3 isn’t open yet.' },
+      ]);
+      return true;
+    }
+    if (s.mind && s.objective === 'p2-day') {
+      const sc = SCENARIO_BY_DAY[s.mind.day];
+      if (sc) this.beginScenario(sc);
+      return true;
+    }
+    s.say([{ speaker: s.active, text: s.mind ? 'Ready to call it a day? Riley’s memories get sorted while she sleeps.' : 'What a first day. Ready to let Riley sleep? Tomorrow there’s more.' }], undefined, [
+      { label: 'Let Riley sleep', run: () => this.sleep() },
+      { label: 'Not yet', run: () => undefined },
+    ]);
+    return true;
+  }
+
+  private sleep() {
+    const s = useGame.getState();
+    this.game.audio.soft();
+    this.screenFlash = 1;
+    if (!s.mind) {
+      s.startPart2();
+      const m = useGame.getState().mind!;
+      useGame.setState({
+        nightReport: {
+          day: m.day,
+          fired: [{ day: m.day, text: 'Art club, Priya and the cloud cat are filed away for good.', tone: 'good' }],
+          faded: [],
+          forgotten: [],
+          islandChanges: [],
+          statBefore: { ...m.stats },
+          statAfter: { ...m.stats },
+          notes: [{ day: m.day, text: 'From now on, the choices you make each day ripple into the days after.', tone: 'mixed' }],
+        },
+      });
+      return;
+    }
+    s.sleep();
+  }
+
+  private seatTeam() {
+    this.consoleMode = true;
+    this.locked = true;
+    this.game.audio.chime(0);
+    const p = this.player;
+    p.targetX = OPERATOR_X;
+    for (const a of this.actors) {
+      if (a === p) continue;
+      a.homeX = CONSOLE_SLOTS[a.id];
+      a.targetX = a.homeX;
+    }
+  }
+
+  private beginScenario(sc: ScenarioDef) {
+    const s = useGame.getState();
+    this.seatTeam();
+    this.p2scenario = sc;
+    s.beginScenario(sc.id);
+    this.p2script = sc.intro;
+    this.p2t = 0;
+    this.screenFlash = 1;
+    this.game.audio.whoosh(true);
+    s.setConsole('cinematic');
+  }
+
+  /** Called by the UI or a key press to cut the opening scene short. */
+  skipCinematic() {
+    if (useGame.getState().consoleStage === 'cinematic' && this.p2t > 0.6) this.endCinematic();
+  }
+
+  private endCinematic() {
+    const s = useGame.getState();
+    const sc = this.p2scenario;
+    if (!sc) return;
+    s.setConsole('situation');
+    s.say(sc.afterIntro(s.flags), () => this.runMoment());
+  }
+
+  private runMoment() {
+    const s = useGame.getState();
+    const sc = this.p2scenario;
+    const run = s.scenario;
+    if (!sc || !run) return;
+    const m = sc.moments[run.moment];
+    this.p2moment = m;
+    this.p2script = m.screen;
+    this.screenFlash = 0.8;
+    s.setConsole('situation');
+    s.say(m.situation(s.flags), () => {
+      useGame.getState().clearMix();
+      useGame.getState().setConsole('mix');
+    });
+  }
+
+  /** The UI's "Send to Riley": the lead emotion steps up and plays its ability. */
+  commitMix() {
+    const s = useGame.getState();
+    const m = this.p2moment;
+    if (!m || s.consoleStage !== 'mix' || mixTotal(s.mix) === 0) return;
+    this.p2mix = { ...s.mix };
+    let lead = s.active;
+    let best = -1;
+    for (const e of EMOTION_ORDER) if (s.mix[e] > best || (s.mix[e] === best && e === s.active)) {
+      best = s.mix[e];
+      lead = e;
+    }
+    if (lead !== s.active) s.setActive(lead);
+    const mg = createMinigame(lead, m.game, this.game.audio, this.particles);
+    mg.setRect(SCREEN);
+    this.minigame = mg;
+    this.lastProgress = -1;
+    this.game.audio.ability(lead);
+    this.player.setPose('ability', 1.2);
+    // everyone with influence leans in
+    for (const a of this.actors) if (this.p2mix[a.id] > 0 && a !== this.player) a.setPose('cheer', 0.8);
+    s.setConsole('minigame');
+    s.setMinigame({ emotion: mg.emotion, title: mg.title, instruction: mg.instruction, primary: mg.primaryLabel, mode: mg.mode, progress: 0 });
+  }
+
+  private resolveP2(mg: Minigame) {
+    const s = useGame.getState();
+    const m = this.p2moment!;
+    const mix = this.p2mix!;
+    this.minigame = null;
+    s.setMinigame(null);
+    const r = resolveMoment(m, mix, mg.score, mg.emotion);
+    s.commitMoment(m.id, r, mix);
+    s.setConsole('outcome');
+    const lead = EMOTIONS[r.lead].name;
+    const helpers = EMOTION_ORDER.filter((e) => e !== r.lead && mix[e] > 0).map((e) => EMOTIONS[e].name);
+    s.showToast(r.overload ? `${lead} took over completely` : helpers.length ? `${lead} led, with ${helpers.join(' and ')}` : `${lead} led`, EMOTIONS[r.lead].color);
+    // islands react on the spot to big swings
+    for (const [id, v] of Object.entries(r.deltas.islands ?? {})) {
+      const def = ISLANDS.find((i) => i.id === id);
+      if (!def || v === undefined) continue;
+      if (v <= -5) {
+        this.camera.shake(8);
+        this.game.audio.thud();
+        this.later(0.6, () => useGame.getState().showToast(`Far away, ${def.name} shudders.`, def.color));
+      } else if (v >= 5) this.later(0.6, () => useGame.getState().showToast(`Far away, ${def.name} glows a little brighter.`, def.color));
+    }
+    for (const a of this.actors) {
+      if (r.overload) a.setPose(a.id === r.lead ? 'ability' : a.id === 'fear' ? 'scared' : 'slump', 1.6);
+      else if (mixDistinct(mix) >= 2 && mix[a.id] > 0) a.setPose('cheer', 1.4);
+    }
+    s.say(r.lines, () => {
+      const st = useGame.getState();
+      if (st.scenario && st.scenario.moment < this.p2scenario!.moments.length) this.runMoment();
+      else this.wrapScenario();
+    });
+  }
+
+  private wrapScenario() {
+    const s = useGame.getState();
+    const made = s.finishScenario();
+    const sc = this.p2scenario!;
+    s.setConsole('finale');
+    this.p2script = sc.memory.script;
+    if (made) {
+      const st = useGame.getState().mind?.memories[made.id];
+      const mem: MemoryDef = { id: made.id, title: sc.memory.title, emotion: made.emotion, text: sc.memory.text, hidden: '', swirl: st?.swirl };
+      this.game.audio.chime(3);
+      this.orbFx = { phase: 'rise', t: 0, from: [SCREEN.x + SCREEN.w / 2, SCREEN.y + SCREEN.h / 2], to: [this.player.x, this.player.headY() - 50], mem };
+    }
+    this.later(2.4, () => {
+      const colour = made ? EMOTIONS[made.emotion].name : 'mixed';
+      useGame.getState().say(
+        [
+          { speaker: made?.emotion ?? 'joy', text: `“${sc.memory.title}” is heading to Long-Term Memory. Mostly ${colour}, with a bit of everyone who helped.` },
+          { speaker: 'console', text: 'The day isn’t over. Replay memories, visit the islands, then let Riley sleep here at the console.' },
+        ],
+        () => {
+          this.orbFx = null;
+          this.p2script = null;
+          this.p2scenario = null;
+          this.p2moment = null;
+          this.exitConsole();
+        },
+      );
+    });
+  }
+
   private enterConsole() {
     const s = useGame.getState();
     this.consoleMode = true;
@@ -562,7 +784,7 @@ export class HQScene extends WorldScene {
   private placeCore(mem: MemoryDef) {
     const s = useGame.getState();
     const slotIndex = s.coreShelf.indexOf(null);
-    const a = Math.PI * 1.12 + (Math.max(0, slotIndex) / 4) * Math.PI * 0.76;
+    const a = Math.PI * 1.12 + (Math.max(0, slotIndex) / (s.coreShelf.length - 1)) * Math.PI * 0.76;
     const to: [number, number] = [HOLDER_X + Math.cos(a) * 120, HQ_FLOOR - 160 + Math.sin(a) * 120];
     this.orbFx = { phase: 'slot', t: 0, from: [this.player.x, this.player.headY() - 50], to, mem };
     s.setCarrying(null);
@@ -645,6 +867,14 @@ export class HQScene extends WorldScene {
       this.camera.targetX = CONSOLE_X;
       this.camera.targetY = 425;
       this.camera.targetZoom = 1.25;
+      if (st.consoleStage === 'cinematic' && this.p2script) {
+        // the opening scene fills the view
+        this.p2t += dt;
+        this.camera.targetY = SCREEN.y + SCREEN.h / 2;
+        this.camera.targetZoom = Math.min(view.w / 800, view.h / 430);
+        const skip = this.p2t > 0.8 && (input.primaryPressed() || input.pressed('KeyE', 'Enter') || input.pointer.pressed);
+        if (skip || this.p2t >= this.p2script.dur) this.endCinematic();
+      }
       if (this.player.targetX === null && Math.abs(this.player.x - OPERATOR_X) > 8) this.player.targetX = OPERATOR_X;
       const blocked = isBlocking(st);
       this.chooseGrace = Math.max(0, this.chooseGrace - dt);
@@ -673,7 +903,10 @@ export class HQScene extends WorldScene {
           const ui = useGame.getState().minigame;
           if (ui) useGame.getState().setMinigame({ ...ui, progress: mg.progress });
         }
-        if (mg.done) this.resolveBeat(mg);
+        if (mg.done) {
+          if (this.p2scenario) this.resolveP2(mg);
+          else this.resolveBeat(mg);
+        }
       }
     }
 
@@ -696,7 +929,9 @@ export class HQScene extends WorldScene {
     drawManual(ctx, MANUAL_X, t);
     screenFrame(ctx, light, t, () => {
       const r = SCREEN;
-      if (this.screenView === 'hallway') drawHallway(ctx, r, t);
+      if (this.p2script) renderVignette(ctx, r, this.p2script, st.consoleStage === 'cinematic' ? this.p2t : t, { captions: st.consoleStage === 'cinematic' });
+      else if (st.mind) renderVignette(ctx, r, IDLE_VIEW(st.objective === 'p2-explore'), t);
+      else if (this.screenView === 'hallway') drawHallway(ctx, r, t);
       else if (this.screenView === 'mural') drawMural(ctx, r, t);
       else drawArtRoom(ctx, r, ART_CLUB.beats[Math.min(st.beat, ART_CLUB.beats.length - 1)].screen, t);
       if (this.minigame) this.minigame.render(ctx, r);

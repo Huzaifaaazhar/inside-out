@@ -10,6 +10,8 @@ import { MapOverlay } from './ui/MapOverlay';
 import { MoodDial, canSwitch } from './ui/MoodDial';
 import { HelpSheet, InspectCard, PauseMenu } from './ui/Sheets';
 import { Captions, TitleScreen } from './ui/Title';
+import { MemoryTheatre } from './ui/MemoryTheatre';
+import { ActivityPanel, Journal, MindReport, NightReport } from './ui/MindSheets';
 
 function useGlobalKeys() {
   useEffect(() => {
@@ -22,14 +24,20 @@ function useGlobalKeys() {
       }
       if (s.phase !== 'playing') return;
       if (e.code === 'Escape') {
-        if (s.inspect) s.setInspect(null);
+        if (s.nightReport) return;
+        if (s.theatre) s.setTheatre(null);
+        else if (s.journalOpen) s.setJournal(false);
+        else if (s.reportOpen) s.setReport(false);
+        else if (s.inspect) s.setInspect(null);
         else if (s.mapOpen) s.setMap(false);
         else if (s.helpOpen) s.setHelp(false);
         else s.setMenu(!s.menuOpen);
         return;
       }
-      const overlay = s.menuOpen || s.helpOpen || s.inspect || s.mapOpen;
+      const overlay = s.menuOpen || s.helpOpen || s.inspect || s.mapOpen || s.theatre || s.journalOpen || s.reportOpen || s.nightReport;
       if (overlay) {
+        if (e.code === 'KeyJ' && s.journalOpen && !s.theatre) s.setJournal(false);
+        if (e.code === 'KeyR' && s.reportOpen) s.setReport(false);
         if (e.code === 'KeyM' && s.mapOpen) s.setMap(false);
         if (e.code === 'KeyH' && s.helpOpen) s.setHelp(false);
         return;
@@ -39,8 +47,12 @@ function useGlobalKeys() {
         s.setActive(EMOTION_ORDER[Number(num[1]) - 1]);
         return;
       }
-      if (e.code === 'KeyM' && s.consoleStage === 'off' && !s.dialogue && !s.transitioning) s.setMap(true);
+      if (e.code === 'KeyM' && s.consoleStage === 'off' && !s.dialogue && !s.transitioning && !s.activity) s.setMap(true);
       if (e.code === 'KeyH' && !s.dialogue) s.setHelp(true);
+      if (s.mind && !s.dialogue && !s.activity && s.consoleStage === 'off') {
+        if (e.code === 'KeyJ') s.setJournal(true);
+        if (e.code === 'KeyR') s.setReport(true);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -88,7 +100,12 @@ export default function App() {
             <ConsolePanel />
             <DialogueBox />
             <MoodDial />
+            <ActivityPanel />
             <MapOverlay />
+            <Journal />
+            <MindReport />
+            <MemoryTheatre />
+            <NightReport />
             <InspectCard />
             <HelpSheet />
             <PauseMenu />

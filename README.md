@@ -2,7 +2,7 @@
 
 A 2D browser game inspired by Pixar's *Inside Out*. You are the new operator of Riley's emotional Headquarters. Choose which emotion drives, use their abilities, and guide an eleven-year-old through her first day at art club.
 
-This is Part 1, the foundation: the opening sequence, an explorable Headquarters, Long-Term Memory, Personality Islands, the five emotions and a tutorial scenario.
+Part 1 is the foundation: the opening sequence, an explorable Headquarters, the five emotions and a tutorial scenario. Part 2 adds a week of Riley's life. That means memories you can replay and reinterpret, forgotten memories, four walkable personality islands, five real-life scenarios, and a consequence system that remembers what you chose.
 
 All artwork is original and drawn in code on Canvas 2D: characters, environments, Riley's view and the user-interface art. All sound is synthesized with WebAudio. No film assets, screenshots or audio files are used. The five emotions are original designs. Each one's colour, shape and props come from its role:
 
@@ -20,7 +20,11 @@ All artwork is original and drawn in code on Canvas 2D: characters, environments
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check and production build into dist/
+npm test           # unit tests for the consequence engine (Vitest)
+npm run test:e2e   # full-week browser playthrough; needs `npm run dev` running and Playwright with Chromium
 ```
+
+Progress saves automatically in the browser. The title screen offers **Continue** or **Start over**.
 
 ## Controls
 
@@ -32,6 +36,9 @@ npm run build      # type-check and production build into dist/
 | Q | Use the current emotion's ability on whatever is nearby |
 | Space | At the console: use the ability on Riley's moment |
 | M | Mind map (travel between areas) |
+| J | Memory journal |
+| R | How Riley's doing (stats, islands, what's happened) |
+| 1–5 at the mixer | Add influence to an emotion (Shift + 1–5 removes it); Enter sends it to Riley |
 | H | Controls sheet |
 | Esc | Pause, or close whatever is open |
 
@@ -56,16 +63,76 @@ Touch works too: tap the floor to walk, tap objects, and use the on-screen abili
 - **Navigation.** In the world: the tube (pneumatic-tube transition) and the balcony (cloud-glide transition). From anywhere: the mind map (thought-bubble iris transition). The map shows areas that later parts will open.
 - **Accessibility.** All words and controls are real DOM elements with labels, visible focus and screen-reader announcements. There's a full keyboard path, a reduce-motion setting (it also follows the operating system's setting) and a sound toggle. Layouts work on desktop and on phones in either orientation.
 
+## What's in Part 2
+
+### Riley's week
+After art club, let Riley sleep at the console. Days 2 to 6 each bring one real-life situation:
+- moving and missing home;
+- an argument with her parents about hockey;
+- the lunch table at a new school;
+- losing the big game;
+- being left out of a party.
+
+Each one opens with a short animated scene on Riley's screen and has two moments. For each moment you **mix her feelings**: share four influence points across the five emotions, at most three each. The strongest emotion leads and plays its ability's mini-game, and the score decides how well its intent lands. The others colour the response.
+
+There are no right answers:
+- Every emotion is the best fit somewhere and does harm somewhere.
+- Letting one emotion take over always costs something.
+- Combinations, like honest-and-hopeful or hurt-and-firm, unlock their own responses.
+
+Some choices echo days later. A slammed door leaves a picture frame face down in the hall. A promise of Sunday calls turns into a long chat with Dani. A pretend "I've seen that show" gets found out. Anything unresolved arrives overnight in **While Riley sleeps**.
+
+### The consequence engine
+It tracks:
+- emotional balance;
+- family connection;
+- friendships;
+- confidence;
+- sense of belonging;
+- the stability of every island;
+- which memories hold each island up.
+
+Each night:
+- Delayed consequences come due.
+- Relationships nobody tended cool off.
+- Running on one emotion wears Riley out.
+- Unvisited memories fade, then roll into The Fading.
+- Islands drift toward the life Riley is actually having.
+
+Islands react visibly: colour drains, cracks spread, lights flicker, debris falls, and activities close when an island crumbles. Each island's heart explains in plain words what's holding it up or dragging it down.
+
+### Memories
+- **Long-Term Memory** is restyled as a sea-glass and copper tidal archive.
+- Every memory is a glowing orb holding a **replayable animated scene** with a detail to look closer at.
+- Watch it through any emotion's **lens**: the scene is regraded and the narration changes.
+- **Choose how Riley remembers it**, which recolours the memory and has consequences. Painting a hard memory gold only helps if Sadness has looked at it first.
+- Core memories keep their colour, but collect swirls from later events.
+- **The Fading** is a grey dune field where forgotten memories drift. Bring them back or let them go. Losing an important one weakens its island.
+- The **memory journal** tracks what you've found, each memory's current colour, how it's being kept and which island it belongs to.
+
+### Personality islands
+The cliffs now lead by light-bridge to four walkable islands. Each has its own look, animated set pieces, an activity that steadies the island once a day, and objects that tell the story of Riley's choices.
+
+| Island | Look | Activity | Story objects |
+|---|---|---|---|
+| Family | Honey dusk, house and porch light | Sunday pancakes (timing) | Photo tree of family memories, mailbox notes, the family table |
+| Friendship | Turquoise seaside boardwalk | Friendship bracelet (pattern memory) | Ferris wheel, messages in bottles, the bench for two, photo board |
+| Hockey | Floodlit rink at night | Penalty shots (aim and timing) | Scoreboard, trophy case, team bench |
+| Goofball | Bubblegum funhouse | Bounce house (charge, jump, catch) | Funhouse mirrors, rubber chicken catapult, suspicious cushion, ice-cream cart |
+
 ## Architecture
 
-See [`docs/adr/001-architecture.md`](docs/adr/001-architecture.md).
+See [`docs/adr/001-architecture.md`](docs/adr/001-architecture.md) and [`docs/adr/002-consequence-engine.md`](docs/adr/002-consequence-engine.md).
 
 ```
 src/engine/        loop-agnostic pieces: input, synthesized audio, camera, particles, drawing helpers
 src/game/art/      procedural illustration: characters, HQ, mindscape, Riley's view
-src/game/content/  data: emotions, areas, islands, memories, dialogue
-src/game/scenario/ the art club scenario (data) and the five ability mini-games
-src/game/scenes/   Opening, HQ, Memory, Islands; WorldScene is the walkable base class
+src/game/content/  data: emotions, areas, islands, memory library (scenes + lenses), dialogue
+src/game/systems/  the consequence engine (pure, unit-tested) and memory lookup
+src/game/art/vignette.ts  animated scenes from Riley's life: places, people, props, lenses
+src/game/activities.ts    island activities
+src/game/scenario/ the art club scenario, Riley's week (data) and the five ability mini-games
+src/game/scenes/   Opening, HQ, Memory, Fading, Islands hub, islands/* (four walkable islands)
 src/game/Game.ts   canvas, loop, scene switching and transitions
 src/state/store.ts Zustand store shared by the canvas world and the React overlay
 src/ui/            React overlay: dial, dialogue, console panel, map, sheets, HUD

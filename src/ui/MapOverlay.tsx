@@ -16,21 +16,30 @@ interface Node {
 }
 
 const NODES: Node[] = [
-  { id: 'hq', area: 'hq', x: 480, y: 250, r: 62, name: AREAS.hq.name, blurb: AREAS.hq.blurb, color: '#FFCF33', spawn: 1500 },
-  { id: 'memory', area: 'memory', x: 190, y: 360, r: 54, name: AREAS.memory.name, blurb: AREAS.memory.blurb, color: '#A05CF0', spawn: 300 },
-  { id: 'islands', area: 'islands', x: 770, y: 360, r: 54, name: AREAS.islands.name, blurb: AREAS.islands.blurb, color: '#3CC6B8', spawn: 300 },
-  { id: FUTURE_AREAS[0].id, x: 180, y: 120, r: 40, name: FUTURE_AREAS[0].name, blurb: FUTURE_AREAS[0].blurb, color: '#8c80b8' },
-  { id: FUTURE_AREAS[1].id, x: 480, y: 470, r: 40, name: FUTURE_AREAS[1].name, blurb: FUTURE_AREAS[1].blurb, color: '#8c80b8' },
-  { id: FUTURE_AREAS[2].id, x: 790, y: 120, r: 40, name: FUTURE_AREAS[2].name, blurb: FUTURE_AREAS[2].blurb, color: '#8c80b8' },
+  { id: 'hq', area: 'hq', x: 480, y: 230, r: 60, name: AREAS.hq.name, blurb: AREAS.hq.blurb, color: '#FFCF33', spawn: 1500 },
+  { id: 'memory', area: 'memory', x: 200, y: 330, r: 50, name: AREAS.memory.name, blurb: AREAS.memory.blurb, color: '#1f9fa8', spawn: 300 },
+  { id: 'fading', area: 'fading', x: 150, y: 490, r: 36, name: AREAS.fading.name, blurb: AREAS.fading.blurb, color: '#b9b4c4', spawn: 300 },
+  { id: 'islands', area: 'islands', x: 760, y: 300, r: 50, name: AREAS.islands.name, blurb: AREAS.islands.blurb, color: '#3CC6B8', spawn: 300 },
+  { id: 'isle-family', area: 'isle-family', x: 600, y: 470, r: 28, name: 'Family', blurb: AREAS['isle-family'].blurb, color: '#F4A259', spawn: 320 },
+  { id: 'isle-friendship', area: 'isle-friendship', x: 710, y: 510, r: 28, name: 'Friendship', blurb: AREAS['isle-friendship'].blurb, color: '#3CC6B8', spawn: 320 },
+  { id: 'isle-hockey', area: 'isle-hockey', x: 820, y: 490, r: 28, name: 'Hockey', blurb: AREAS['isle-hockey'].blurb, color: '#7FC8FF', spawn: 320 },
+  { id: 'isle-goofball', area: 'isle-goofball', x: 900, y: 420, r: 28, name: 'Goofball', blurb: AREAS['isle-goofball'].blurb, color: '#FF7FB0', spawn: 320 },
+  { id: FUTURE_AREAS[0].id, x: 190, y: 110, r: 36, name: FUTURE_AREAS[0].name, blurb: FUTURE_AREAS[0].blurb, color: '#8c80b8' },
+  { id: FUTURE_AREAS[1].id, x: 400, y: 520, r: 36, name: FUTURE_AREAS[1].name, blurb: FUTURE_AREAS[1].blurb, color: '#8c80b8' },
+  { id: FUTURE_AREAS[2].id, x: 790, y: 100, r: 36, name: FUTURE_AREAS[2].name, blurb: FUTURE_AREAS[2].blurb, color: '#8c80b8' },
 ];
 
 const LINKS: [string, string, boolean][] = [
   ['hq', 'memory', true],
+  ['memory', 'fading', true],
   ['hq', 'islands', true],
+  ['islands', 'isle-family', true],
+  ['islands', 'isle-friendship', true],
+  ['islands', 'isle-hockey', true],
+  ['islands', 'isle-goofball', true],
   ['hq', 'daydream', false],
   ['hq', 'station', false],
-  ['memory', 'undercurrent', false],
-  ['hq', 'undercurrent', false],
+  ['fading', 'undercurrent', false],
 ];
 
 /** A hand-drawn map of Riley's mind. Travel by choosing a lit place. */
@@ -48,11 +57,12 @@ export function MapOverlay() {
 
   if (!open) return null;
 
-  const reachable = (n: Node) => !!n.area && n.area !== area && (n.area !== 'islands' || doorOpen);
+  const islandArea = (a?: string) => a === 'islands' || !!a?.startsWith('isle-');
+  const reachable = (n: Node) => !!n.area && n.area !== area && (!islandArea(n.area) || doorOpen);
   const why = (n: Node) => {
     if (!n.area) return 'Not reachable yet';
     if (n.area === area) return 'You are here';
-    if (n.area === 'islands' && !doorOpen) return 'The balcony door in HQ is jammed';
+    if (islandArea(n.area) && !doorOpen) return 'The balcony door in HQ is jammed';
     return 'Travel here';
   };
   const go = (n: Node) => {
@@ -120,7 +130,7 @@ export function MapOverlay() {
                 <circle cx={n.x} cy={n.y} r={n.r + 14} fill={n.color} opacity={n.area ? 0.18 : 0.08} />
                 <circle className="ring" cx={n.x} cy={n.y} r={n.r} fill="#241a52" stroke={n.color} strokeWidth={3} />
                 <circle cx={n.x - n.r * 0.3} cy={n.y - n.r * 0.3} r={n.r * 0.22} fill="#fff" opacity={n.area ? 0.4 : 0.1} />
-                {here && (
+                {here && n.r >= 30 && (
                   <g>
                     <circle cx={n.x} cy={n.y} r={n.r + 8} fill="none" stroke="#F3EEFF" strokeWidth={3} strokeDasharray="6 6" />
                     <text x={n.x} y={n.y + 6} textAnchor="middle" fontFamily="Grandstander, Nunito" fontWeight={800} fontSize={17} fill="#FFF1B0">
@@ -130,10 +140,10 @@ export function MapOverlay() {
                 )}
                 {!here && (
                   <text x={n.x} y={n.y + 6} textAnchor="middle" fontFamily="Grandstander, Nunito" fontWeight={800} fontSize={n.area ? 17 : 14} fill={ok ? '#F3EEFF' : '#8c80b8'}>
-                    {n.area ? (ok ? 'Go' : 'Locked') : 'Fog'}
+                    {n.r < 30 ? '' : n.area ? (ok ? 'Go' : 'Locked') : 'Fog'}
                   </text>
                 )}
-                <text x={n.x} y={n.y + n.r + 34} textAnchor="middle" fontFamily="Grandstander, Nunito" fontWeight={800} fontSize={20} fill={n.area ? '#F3EEFF' : '#8c80b8'}>
+                <text x={n.x} y={n.y + n.r + (n.r < 30 ? 24 : 34)} textAnchor="middle" fontFamily="Grandstander, Nunito" fontWeight={800} fontSize={n.r < 30 ? 15 : 20} fill={n.area ? '#F3EEFF' : '#8c80b8'}>
                   {n.name}
                 </text>
                 <text x={n.x} y={n.y + n.r + 56} textAnchor="middle" fontFamily="Nunito" fontWeight={700} fontSize={14} fill="#b9a7f5">

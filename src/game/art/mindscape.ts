@@ -227,7 +227,28 @@ export function drawIsland(ctx: Ctx, id: IslandId, x: number, y: number, s: numb
       if (lit) for (let i = 0; i < 5; i++) circle(ctx, 120 + i * 18, -170 - i * 14, 2.5, light(0.5 + 0.5 * Math.sin(t * 3 + i)));
       break;
     }
-    case 'silliness': {
+    case 'hockey': {
+      // a little floodlit rink with a goal and a scoreboard
+      ctx.fillStyle = lit ? mixHex('#4a3d80', '#E8F4FF', lit * 0.8) : '#4a3d80';
+      ctx.beginPath();
+      ctx.ellipse(0, -22, 80, 12, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = lineCol;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(40, -48, 26, 22);
+      ctx.fillStyle = lineCol;
+      ctx.fillRect(-70, -100, 6, 80);
+      ctx.fillRect(64, -100, 6, 80);
+      ctx.fillRect(-36, -96, 60, 30);
+      ctx.fillStyle = lit ? rgba('#E63946', lit) : '#3a2f70';
+      ctx.fillRect(-30, -90, 48, 18);
+      if (lit) {
+        glow(ctx, -67, -104, 60, '#ffffff', lit * 0.8);
+        glow(ctx, 67, -104, 60, '#ffffff', lit * 0.8);
+      }
+      break;
+    }
+    case 'goofball': {
       // wobbly striped bouncy tent
       const wob = Math.sin(t * 3) * 6 * lit;
       ctx.fillStyle = lineCol;

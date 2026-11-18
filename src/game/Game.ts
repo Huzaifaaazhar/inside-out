@@ -12,6 +12,11 @@ import { HQScene } from './scenes/HQScene';
 import { IslandsScene } from './scenes/IslandsScene';
 import { MemoryScene } from './scenes/MemoryScene';
 import { OpeningScene } from './scenes/OpeningScene';
+import { FadingScene } from './scenes/FadingScene';
+import { FamilyIsland } from './scenes/islands/FamilyIsland';
+import { FriendshipIsland } from './scenes/islands/FriendshipIsland';
+import { GoofballIsland } from './scenes/islands/GoofballIsland';
+import { HockeyIsland } from './scenes/islands/HockeyIsland';
 
 interface Transition {
   kind: TransitionKind;
@@ -58,6 +63,11 @@ export class Game {
       hq: new HQScene(this),
       memory: new MemoryScene(this),
       islands: new IslandsScene(this),
+      fading: new FadingScene(this),
+      'isle-family': new FamilyIsland(this),
+      'isle-friendship': new FriendshipIsland(this),
+      'isle-hockey': new HockeyIsland(this),
+      'isle-goofball': new GoofballIsland(this),
     };
     this.current = this.scenes.opening;
 
@@ -78,6 +88,11 @@ export class Game {
       }
       if (s.phase === 'playing' && prev.phase === 'opening') {
         this.go('hq', 'fade');
+      }
+      if (s.phase === 'playing' && prev.phase === 'title') {
+        // continuing a saved game: go straight back to where Riley's operator left off
+        this.audio.setMood(s.active);
+        this.go(s.area, 'fade');
       }
     });
 

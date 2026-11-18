@@ -6,18 +6,19 @@ import { useGame } from '../../state/store';
 import { cloudBank, drawIsland, drawSky, lightBridge } from '../art/mindscape';
 import { EMOTIONS } from '../content/emotions';
 import type { IslandId } from '../content/world';
-import { ISLANDS } from '../content/world';
+import { ISLANDS, ISLAND_AREA } from '../content/world';
+import { BAND_LABEL, stabilityBand } from '../systems/mind';
 import type { Game } from '../Game';
 import { Actor, WorldScene } from '../WorldScene';
 
 const W = 3400;
 const FLOOR = 780;
 const PARALLAX = 0.55;
-const VIEW: Record<IslandId, number> = { family: 700, friendship: 1260, honesty: 1820, curiosity: 2360, silliness: 3000 };
-const ISLAND_Y: Record<IslandId, number> = { family: 470, friendship: 400, honesty: 450, curiosity: 420, silliness: 470 };
-const EDGE_X = 2080;
+const VIEW: Record<IslandId, number> = { family: 560, friendship: 1020, hockey: 1480, honesty: 1900, curiosity: 2380, goofball: 3000 };
+const ISLAND_Y: Record<IslandId, number> = { family: 470, friendship: 400, hockey: 450, honesty: 470, curiosity: 420, goofball: 470 };
+const EDGE_X = 2140;
 const BOULDER_X = 2700;
-const GOSSIP_X = 1820;
+const GOSSIP_X = 1900;
 const DOOR_X = 150;
 
 /** World x on the island layer that lines up with viewpoint `vx` when the camera is centred there. */
@@ -27,7 +28,7 @@ export class IslandsScene extends WorldScene {
   readonly id = 'islands' as const;
   worldW = W;
   floorY = FLOOR;
-  private lit: Record<IslandId, number> = { family: 1, friendship: 0, honesty: 1, curiosity: 1, silliness: 1 };
+  private lit: Record<IslandId, number> = { family: 1, friendship: 0, hockey: 1, honesty: 1, curiosity: 1, goofball: 1 };
   private celebrating = 0;
   private boulder = 1;
   private gossip = { alpha: 1, x: GOSSIP_X, y: 300, vy: 0, flying: false };
@@ -46,7 +47,7 @@ export class IslandsScene extends WorldScene {
     this.actors[0].id = useGame.getState().active;
     super.enter(spawn);
     const st = useGame.getState();
-    for (const i of ISLANDS) this.lit[i.id] = st.islands[i.id] && (i.id !== 'friendship' || st.flags.friendshipCelebrated) ? 1 : 0;
+    for (const i of ISLANDS) this.lit[i.id] = this.litTarget(i.id);
     this.boulder = st.flags.boulder ? 0 : 1;
     if (st.flags.gossip) this.gossip.alpha = 0;
     if (st.flags.edgeMarked) this.edgeMark = 1;
@@ -56,6 +57,15 @@ export class IslandsScene extends WorldScene {
       this.later(0.8, () => this.player.say('Personality Islands! The parts of Riley that make her Riley.', 3.4));
     }
     useGame.getState().setFlag('islandsVisited');
+  }
+
+  /** How brightly an island glows: from Part 1's power state, then from its stability. */
+  private litTarget(id: IslandId) {
+    const st = useGame.getState();
+    if (id === 'friendship' && !st.flags.friendshipCelebrated && this.celebrating <= 0) return 0;
+    const stab = st.mind?.islands[id];
+    if (stab === undefined) return st.islands[id] ? 1 : 0;
+    return Math.max(0, Math.min(1, (stab - 15) / 55));
   }
 
   private celebrateFriendship() {
@@ -97,6 +107,17 @@ export class IslandsScene extends WorldScene {
     });
 
     for (const def of ISLANDS) {
+      const area = ISLAND_AREA[def.id];
+      if (area)
+        this.interactables.push({
+          id: `bridge-${def.id}`,
+          x: VIEW[def.id] + 150,
+          y: FLOOR - 170,
+          range: 80,
+          hit: { x: VIEW[def.id] + 90, y: FLOOR - 170, w: 120, h: 170 },
+          label: () => `Cross the bridge to ${def.name}`,
+          interact: () => store().travel(area, 'glide', 320),
+        });
       this.interactables.push({
         id: `island-${def.id}`,
         x: VIEW[def.id],
@@ -106,9 +127,10 @@ export class IslandsScene extends WorldScene {
         label: () => `Look out at ${def.name}`,
         interact: () => {
           const s = store();
-          const on = s.islands[def.id];
+          const stab = s.mind?.islands[def.id];
+          const on = stab !== undefined ? stab >= 45 : s.islands[def.id];
           s.setInspect({
-            kicker: on ? 'Powered by a core memory' : 'Dark',
+            kicker: stab !== undefined ? `${BAND_LABEL[stabilityBand(stab)]}: ${Math.round(stab)} out of 100` : on ? 'Powered by a core memory' : 'Dark',
             title: def.name,
             body: def.about,
             color: def.color,
@@ -171,7 +193,7 @@ export class IslandsScene extends WorldScene {
           this.camera.shake(24);
           this.game.audio.thud();
           this.particles.emit({ x: BOULDER_X, y: FLOOR - 90, count: 60, color: ['#6b58b4', '#3a2b72', '#F0412D', '#FFB13B'], shape: 'ember', speed: [200, 600], gravity: 900, life: [0.5, 1.2] });
-          this.player.say('Path. Cleared. Silliness Island, here we come.', 3);
+          this.player.say('Path. Cleared. Goofball Island, here we come.', 3);
           store().showToast('Anger smashed the boulder', EMOTIONS.anger.color);
         },
       },
@@ -206,7 +228,7 @@ export class IslandsScene extends WorldScene {
   protected tick(dt: number) {
     const st = useGame.getState();
     for (const i of ISLANDS) {
-      const target = i.id === 'friendship' ? (st.flags.friendshipCelebrated || this.celebrating > 0 ? 1 : 0) : st.islands[i.id] ? 1 : 0;
+      const target = this.litTarget(i.id);
       this.lit[i.id] = damp(this.lit[i.id], target, i.id === 'friendship' ? 0.9 : 4, dt);
     }
     if (this.celebrating > 0) {
@@ -272,8 +294,30 @@ export class IslandsScene extends WorldScene {
       // light-thread bridges reach back toward the cliff
       if (lit > 0.02) lightBridge(ctx, ix, iy + 10, ix + 80, STAGE_H + 60, def.color, t, lit);
       drawIsland(ctx, def.id, ix, iy, 0.95, t, lit);
+      const stab = st.mind?.islands[def.id];
+      if (stab !== undefined && stab < 45) {
+        // cracks across the rock, and pieces breaking away
+        ctx.strokeStyle = 'rgba(10,5,32,0.75)';
+        ctx.lineWidth = 3;
+        const n = Math.round((45 - stab) / 8) + 1;
+        for (let k = 0; k < n; k++) {
+          const cx = ix - 80 + hash(k * 3.1 + ix) * 160;
+          ctx.beginPath();
+          ctx.moveTo(cx, iy - 10);
+          ctx.lineTo(cx + 12, iy + 30);
+          ctx.lineTo(cx - 6, iy + 60);
+          ctx.lineTo(cx + 8, iy + 95);
+          ctx.stroke();
+        }
+        if (stab < 25) for (let k = 0; k < 3; k++) {
+          const fk = (t * 0.25 + k / 3) % 1;
+          ctx.fillStyle = `rgba(42,31,92,${1 - fk})`;
+          ctx.fillRect(ix - 40 + k * 40, iy + 100 + fk * 260, 14, 14);
+        }
+      }
       ctx.font = `700 22px ${FONT_DISPLAY}`;
       signText(ctx, def.name, ix, iy + 150, 22, lit > 0.5 ? mixHex('#F3EEFF', def.color, 0.4) : '#8c80b8');
+      if (stab !== undefined) signText(ctx, BAND_LABEL[stabilityBand(stab)], ix, iy + 178, 16, stab >= 45 ? '#E6F7F4' : '#FFB4A6');
     }
     if (this.celebrating > 0 && this.celebrating < 3) {
       const k = this.celebrating / 3;
@@ -299,7 +343,11 @@ export class IslandsScene extends WorldScene {
     this.drawDoor(ctx, DOOR_X, t);
     this.drawBoulder(ctx, t);
     this.drawGossip(ctx, t);
-    for (const def of ISLANDS) this.drawViewpoint(ctx, VIEW[def.id], def.color, st.islands[def.id], t);
+    for (const def of ISLANDS) {
+      const stab = st.mind?.islands[def.id];
+      this.drawViewpoint(ctx, VIEW[def.id], def.color, stab !== undefined ? stab >= 45 : st.islands[def.id], t);
+      if (ISLAND_AREA[def.id]) this.drawGate(ctx, VIEW[def.id] + 150, def.color, def.name, t);
+    }
     this.drawActors(ctx);
     this.drawEffects(ctx);
     this.particles.render(ctx);
@@ -389,6 +437,26 @@ export class IslandsScene extends WorldScene {
       signText(ctx, 'Crumbly. Keep back!', EDGE_X, FLOOR - 100, 20, EMOTIONS.fear.light);
       ctx.restore();
     }
+  }
+
+  /** A little arch where a light-bridge leaves the cliff for a walkable island. */
+  private drawGate(ctx: Ctx, x: number, color: string, name: string, t: number) {
+    glow(ctx, x, FLOOR - 90, 110, color, 0.45 + Math.sin(t * 2 + x) * 0.1);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(x, FLOOR - 70, 54, Math.PI, 0);
+    ctx.lineTo(x + 54, FLOOR - 4);
+    ctx.moveTo(x - 54, FLOOR - 70);
+    ctx.lineTo(x - 54, FLOOR - 4);
+    ctx.stroke();
+    ctx.fillStyle = rgba(color, 0.25);
+    ctx.beginPath();
+    ctx.arc(x, FLOOR - 70, 46, Math.PI, 0);
+    ctx.lineTo(x + 46, FLOOR - 4);
+    ctx.lineTo(x - 46, FLOOR - 4);
+    ctx.fill();
+    signText(ctx, name.replace(' Island', ''), x, FLOOR - 40, 15, '#F3EEFF');
   }
 
   private drawViewpoint(ctx: Ctx, x: number, color: string, on: boolean, t: number) {

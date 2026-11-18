@@ -28,6 +28,19 @@ export const SoundIcon = ({ muted }: { muted: boolean }) => (
   </svg>
 );
 
+export const BookIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" {...base}>
+    <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+export const HeartIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" {...base}>
+    <path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z" />
+  </svg>
+);
+
 export const NextIcon = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" {...base}>
     <path d="m9 6 6 6-6 6" />
